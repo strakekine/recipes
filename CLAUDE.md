@@ -75,7 +75,7 @@ darum lädt der Browser-Test die Seite unter dieser Adresse). Zwei Reiter **Reze
 Zutaten, „+ Rezept“ = Datei/Text → KI → **Vorschau im Bearbeiten-Formular, erst dann speichern**, „Von Hand eintippen“)
 und **Einkauf**. Rezept-Ansicht: Personen ±, Zutaten (ohne Menge gelb mit „?“), Schritte, Notiz, „▶ Original ansehen“,
 „🛒 Auf die Einkaufsliste“, „Direkt in Bring!“, Bearbeiten, Löschen. **Bearbeiten als Text**: eine Zutat je Zeile
-(`zeileLesen`: „200 g Mehl“, „2–3 Zehen Knoblauch“, „1 1/2 EL Öl“, „½ TL“, „Salz (nach Gefühl)“), „## Name“ = Gruppe;
+(`zeileLesen`: „200 g Mehl“, „2–3 Zehen Knoblauch“, „1 1/2 EL Öl“, „½ TL“, „Salz (nach Gefühl)“), eine Zeile mit Doppelpunkt am Ende ohne Menge = Gruppe („Für die Sauce:“; vom Nutzer gefragt, „## Name“ war zu technisch und wird weiter verstanden);
 der Gang bleibt von der KI, neue Zutaten rät `gangRaten`. Mengen: `mengeText` (Personen-Faktor, Prise/Msp skalieren
 nicht, ab 100 g/ml auf 5er, ab 1000 → kg/l, Stückiges auf ½). **Einkaufsliste nur im Handy** (`recipes_einkauf`;
 geteilt wird über Bring!): `einkaufDazu` zählt gleiche Zutat + Einheitenfamilie (g/kg, ml/l) zusammen, ohne Menge →

@@ -59,7 +59,7 @@ ok((await p.textContent("#liste")).includes("Noch keine Rezepte"), "leere Liste 
 await p.click("#neuBtn"); await p.fill("#text", "Rezept aus dem Reel https://www.facebook.com/share/r/abc");
 await p.click("#los"); await p.waitForSelector("#vEdit:not([hidden])");
 ok(await p.inputValue("#eTitel") === "Cremige Gnocchi", "KI-Ergebnis landet in der Vorschau");
-ok((await p.inputValue("#eZut")).includes("## Sauce\n200 ml Sahne") && (await p.inputValue("#eQuelle")).includes("facebook"), "Zutaten als Text, Gruppe, Link übernommen");
+ok((await p.inputValue("#eZut")).includes("Sauce:\n200 ml Sahne") && (await p.inputValue("#eQuelle")).includes("facebook"), "Zutaten als Text, Gruppe, Link übernommen");
 // Korrektur von Hand: Basilikum bekommt eine Menge
 await p.fill("#eZut", (await p.inputValue("#eZut")).replace("Basilikum (Menge nicht genannt)", "1 Bund Basilikum"));
 await p.click("#eSpeichern"); await p.waitForSelector("#vRezept:not([hidden]) h2");

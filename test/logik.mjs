@@ -34,7 +34,9 @@ ok(L.mengeText({ menge: null, einheit: "" }, 2) === "", "ohne Menge leer");
 // Hin und zurück (Bearbeiten)
 const zut = [{ menge: 200, einheit: "ml", name: "Sahne", gang: "Kühlregal", gruppe: "Sauce" }, { menge: null, einheit: "", name: "Basilikum", hinweis: "Menge nicht genannt", gang: "Obst & Gemüse" }];
 const txt = L.zutatenText(zut);
-ok(txt === "## Sauce\n200 ml Sahne\nBasilikum (Menge nicht genannt)", "als Text");
+ok(txt === "Sauce:\n200 ml Sahne\nBasilikum (Menge nicht genannt)", "als Text, Gruppe mit Doppelpunkt");
+gleich(L.zutatenLesen("Für den Teig:\n500 g Mehl\n## Belag\n1 Tomate").map(z => [z.name, z.gruppe]), [["Mehl", "Für den Teig"], ["Tomate", "Belag"]], "Doppelpunkt-Zeile und alte ##-Schreibweise werden Gruppen");
+ok(L.zutatenLesen("2 EL Öl:")[0].name === "Öl:", "Zeile mit Menge bleibt eine Zutat, auch mit Doppelpunkt");
 const zur = L.zutatenLesen(txt, zut);
 gleich(zur.map(z => [z.menge, z.einheit, z.name, z.gruppe || "", z.gang]), [[200, "ml", "Sahne", "Sauce", "Kühlregal"], [null, "", "Basilikum", "Sauce", "Obst & Gemüse"]], "zurück gelesen, Gang behalten");
 ok(L.zutatenLesen("3 Zwiebeln")[0].gang === "Obst & Gemüse", "Gang geraten: Zwiebeln");

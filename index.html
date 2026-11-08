@@ -101,7 +101,7 @@ details summary{cursor:pointer;color:var(--m)}
       <div style="margin-top:10px"><div class="s">Titel</div><input type="text" id="eTitel"></div>
       <div class="r"><div style="flex:1"><div class="s">Personen</div><input type="number" inputmode="numeric" id="ePers" min="1" max="100"></div>
         <div style="flex:1"><div class="s">Zeit (min)</div><input type="number" inputmode="numeric" id="eZeit" min="1"></div></div>
-      <div style="margin-top:10px"><div class="s">Zutaten — eine je Zeile, z. B. „200 g Mehl“, „2 Eier“, „Salz“. „## Für die Sauce“ beginnt eine Gruppe.</div><textarea id="eZut" style="min-height:200px"></textarea></div>
+      <div style="margin-top:10px"><div class="s">Zutaten — eine je Zeile, z. B. „200 g Mehl“, „2 Eier“, „Salz“. Eine Zeile mit Doppelpunkt am Ende („Für die Sauce:“) wird zur Zwischenüberschrift.</div><textarea id="eZut" style="min-height:200px"></textarea></div>
       <div style="margin-top:10px"><div class="s">Schritte — einer je Zeile</div><textarea id="eSchr" style="min-height:160px"></textarea></div>
       <div style="margin-top:10px"><div class="s">Notiz</div><textarea id="eNotiz" style="min-height:60px"></textarea></div>
       <div style="margin-top:10px"><div class="s">Link zum Original</div><input type="text" id="eQuelle" inputmode="url"></div>
@@ -126,7 +126,7 @@ details summary{cursor:pointer;color:var(--m)}
 <script>
 /* ==== Logik ==== (kein DOM; test/rezepte.mjs schneidet diesen Block aus) */
 const WORKER = "https://recipes.rjtp6r9s9h.workers.dev";
-const FASSUNG = "08.11.2026 c";
+const FASSUNG = "08.11.2026 d";
 const GAENGE = ["Obst & Gemüse", "Brot & Backwaren", "Kühlregal", "Fleisch & Fisch", "Tiefkühl",
   "Nudeln, Reis & Trockenes", "Konserven & Gläser", "Gewürze, Öl & Saucen", "Backzutaten", "Getränke", "Sonstiges"];
 const EINHEITEN = ["g", "kg", "ml", "l", "EL", "TL", "Prise", "Msp", "Stück", "Dose", "Bund", "Zehe", "Becher", "Pck", "Scheibe", "Handvoll"];
@@ -193,11 +193,12 @@ function zeileAus(z){
   return [mengeText(z).trim(), z.name].filter(Boolean).join(" ") + (z.hinweis ? " (" + z.hinweis + ")" : "");
 }
 
-/* Zutaten als Text zum Bearbeiten und zurück. Gruppen als „## Name“. */
+/* Zutaten als Text zum Bearbeiten und zurück. Gruppen als Zeile mit Doppelpunkt („Für die Sauce:“);
+   „## Für die Sauce“ (erste Fassung) wird weiter verstanden. */
 function zutatenText(zutaten){
   let g = "", out = [];
   for(const z of zutaten || []){
-    if((z.gruppe || "") !== g){ g = z.gruppe || ""; if(g) out.push("## " + g); }
+    if((z.gruppe || "") !== g){ g = z.gruppe || ""; if(g) out.push(g.replace(/:$/, "") + ":"); }
     out.push(zeileAus(z));
   }
   return out.join("\n");
@@ -207,7 +208,8 @@ function zutatenLesen(text, alt = []){
   let gruppe = "", out = [];
   for(const zl of String(text).split("\n")){
     const t = zl.trim(); if(!t) continue;
-    const gm = t.match(/^#+\s*(.*)$/); if(gm){ gruppe = gm[1].replace(/:$/, "").trim(); continue; }
+    const gm = t.match(/^#+\s*(.*)$/) || (/:$/.test(t) && !/^\s*[\d½¼¾⅓⅔]/.test(t) ? [t, t] : null);
+    if(gm){ gruppe = gm[1].replace(/:$/, "").trim(); continue; }
     const z = zeileLesen(t); if(!z) continue;
     if(gruppe) z.gruppe = gruppe;
     z.gang = altNach.get(z.name.toLowerCase())?.gang || gangRaten(z.name);
