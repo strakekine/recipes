@@ -40,6 +40,7 @@ Regeln:
 - portionen: die Menge, für die das Rezept gedacht ist, wie genannt ("für 4 Personen" → 4, "für 24 bis 28 Kräcker" → 26, "1 Kuchen" → 1). Wenn nicht genannt, schätzen und in die notiz schreiben "Portionen geschätzt".
 - portion_einheit: wofür diese Zahl steht. "Personen", wenn es um Personen oder Portionen geht; sonst das Wort aus dem Rezept in der Mehrzahl ("Kräcker", "Stück", "Brötchen", "Kekse", "Gläser") oder Einzahl, wenn es nur eins ist ("Kuchen", "Brot", "Blech"). Nie Personen erfinden, wo das Rezept Stück nennt.
 - zeit_min: Gesamtzeit in Minuten, wenn erkennbar, sonst null.
+- bild_sekunde: nur bei einem Video — die Sekunde (vom Anfang des Videos gezählt), in der das fertige Gericht am schönsten und am größten zu sehen ist, möglichst ohne eingeblendeten Text. Das wird das Vorschaubild. Ohne Video oder ohne fertiges Gericht: null.
 - schritte: kurz und klar, ein Arbeitsgang je Schritt, Zeiten und Temperaturen wörtlich übernehmen ("10 Minuten köcheln").
 - Ist gar kein Rezept zu erkennen, titel leer lassen und in der notiz sagen, warum.`;
 
@@ -50,6 +51,7 @@ const SCHEMA = {
     portionen: { type: "NUMBER", nullable: true },
     portion_einheit: { type: "STRING", description: "wofür die Zahl portionen steht: Personen, Kräcker, Stück, Kuchen …" },
     zeit_min: { type: "NUMBER", nullable: true },
+    bild_sekunde: { type: "NUMBER", nullable: true, description: "nur bei Video: Sekunde mit dem schönsten Bild vom fertigen Gericht" },
     zutaten: { type: "ARRAY", items: { type: "OBJECT", properties: {
       gruppe: { type: "STRING" }, menge: { type: "NUMBER", nullable: true },
       menge_bis: { type: "NUMBER", nullable: true }, einheit: { type: "STRING", description: "Kürzel genau so geschrieben: " + EINHEITEN.filter(Boolean).join(", ") + " — oder leer" },
@@ -122,6 +124,7 @@ export function saeubern(o){
     portionen: zahl(o.portionen, 1, 500),
     portion_einheit: str(o.portion_einheit, 30) || "Personen",
     zeit_min: zahl(o.zeit_min, 1, 7 * 24 * 60),
+    ...(zahl(o.bild_sekunde, 0, 3600) != null ? { bild_sekunde: zahl(o.bild_sekunde, 0, 3600) } : {}),
     zutaten,
     schritte: (Array.isArray(o.schritte) ? o.schritte : []).map(s => str(s, 1000)).filter(Boolean).slice(0, 60),
     notiz: str(o.notiz, 1000),
@@ -551,7 +554,7 @@ label.file{display:block;border:2px dashed var(--l);border-radius:12px;padding:1
 <div class="k" id="ergebnis" hidden></div>
 <div class="k"><b>Gespeichert</b><div id="liste" class="s">–</div></div>
 <details class="k" id="protK"><summary><b>Protokoll</b> <span class="s">(was der Worker zuletzt gemacht hat)</span></summary><div id="prot" class="s">–</div></details>
-<div class="s" style="text-align:center">Fassung 08.11.2026 j</div>
+<div class="s" style="text-align:center">Fassung 08.11.2026 k</div>
 </main><script>
 const $=id=>document.getElementById(id);
 let CODE="";try{CODE=localStorage.getItem("recipes_code")||""}catch{}

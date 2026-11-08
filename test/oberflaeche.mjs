@@ -15,7 +15,7 @@ const stmt = (sql, a = []) => ({ bind: (...x) => stmt(sql, x), run: async () => 
   first: async () => db.prepare(sql).get(...a) ?? null, all: async () => ({ results: db.prepare(sql).all(...a) }) });
 const env = { GEMINI_KEY: "K", FAMILIEN_CODE: "familie", DB: { prepare: s => stmt(s) } };
 
-const KI = { titel: "Cremige Gnocchi", portionen: 2, zeit_min: 20, zutaten: [
+const KI = { titel: "Cremige Gnocchi", portionen: 2, zeit_min: 20, bild_sekunde: 1.6, zutaten: [
   { name: "Gnocchi", menge: 500, einheit: "g", gang: "Kühlregal" },
   { name: "Sahne", menge: 200, einheit: "ml", gang: "Kühlregal", gruppe: "Sauce" },
   { name: "Salz", menge: 1, einheit: "Prise", gang: "Gewürze, Öl & Saucen", gruppe: "Sauce" },
@@ -139,6 +139,37 @@ const bildRes = await W.fetch(new Request(await origLink.getAttribute("href")), 
 ok(bildRes.status === 200 && Buffer.from(await bildRes.arrayBuffer()).equals(png), "das gespeicherte Original ist das hochgeladene Foto");
 await p.click("#zur");
 ok(await p.locator("#liste .li .icon img").count() === 1, "Vorschaubild in der Liste");
+// Video-Import: Standbild an der von Gemini genannten Sekunde (1,6 s). Testvideo: 1 s schwarz, dann orange „Gericht“.
+const webm = await p.evaluate(async () => {
+  const c = document.createElement("canvas"); c.width = 320; c.height = 240; const g = c.getContext("2d");
+  const rec = new MediaRecorder(c.captureStream(25), { mimeType: "video/webm" }); const teile = [];
+  rec.ondataavailable = e => teile.push(e.data); rec.start(100);
+  const t0 = performance.now();
+  await new Promise(fertig => { (function mal(){ const t = performance.now() - t0;
+    g.fillStyle = t < 1000 ? "#000" : "#ff8a00"; g.fillRect(0, 0, 320, 240);
+    if(t > 1000){ g.fillStyle = "#7b2cff"; g.beginPath(); g.arc(160, 120, 60, 0, 7); g.fill(); }
+    if(t < 2500) requestAnimationFrame(mal); else fertig(); })(); });
+  rec.stop(); await new Promise(r => rec.onstop = r);
+  const b = new Blob(teile, { type: "video/webm" });
+  return btoa(String.fromCharCode(...new Uint8Array(await b.arrayBuffer())));
+});
+await p.unroute("https://generativelanguage.googleapis.com/**");
+await p.route("https://generativelanguage.googleapis.com/**", r => r.fulfill({ status: 200, headers: { "access-control-allow-origin": "*", "content-type": "application/json" },
+  body: JSON.stringify({ file: { name: "files/video1", uri: "https://generativelanguage.googleapis.com/v1beta/files/video1", mimeType: "video/webm" } }) }));
+await p.click("#neuBtn"); await p.setInputFiles("#datei", { name: "reel.webm", mimeType: "video/webm", buffer: Buffer.from(webm, "base64") });
+await p.click("#los"); await p.waitForSelector("#vEdit:not([hidden])", { timeout: 40000 });
+await p.fill("#eTitel", "Aus dem Video"); await p.click("#eSpeichern"); await p.waitForSelector("#vRezept:not([hidden]) h2");
+const standLink = p.locator("#vRezept a:has-text('Bild aus dem Video')");
+ok(await standLink.count() === 1 && await p.locator("#vRezept a:has-text('📄')").count() === 0, "Video-Import: „🖼️ Bild aus dem Video“, kein Video als Original");
+const sb = await W.fetch(new Request(await standLink.getAttribute("href")), env);
+const farbe = await p.evaluate(async b64 => { const img = new Image(); img.src = "data:image/jpeg;base64," + b64; await img.decode();
+  const c = document.createElement("canvas"); c.width = img.width; c.height = img.height; const g = c.getContext("2d"); g.drawImage(img, 0, 0);
+  const [r, gr, bl] = g.getImageData(10, 10, 1, 1).data; return { r, gr, bl, w: img.width }; }, Buffer.from(await sb.arrayBuffer()).toString("base64"));
+ok(sb.headers.get("content-type") === "image/jpeg" && farbe.r > 200 && farbe.gr > 100 && farbe.bl < 80 && farbe.w === 320, "Standbild zeigt das „Gericht“ (orange), nicht den schwarzen Anfang");
+await p.click("#zur");
+ok(await p.locator("#liste .li:has-text('Aus dem Video') .icon img").count() === 1, "Standbild als Vorschaubild in der Liste");
+await p.click("#liste .li:has-text('Aus dem Video')"); await p.click("#loesch"); await p.waitForSelector("#vListe:not([hidden])");
+
 // Text-Import danach: kein Original übrig vom vorigen Foto
 await p.click("#neuBtn"); await p.fill("#text", "Nur Text"); await p.click("#los"); await p.waitForSelector("#vEdit:not([hidden])");
 await p.fill("#eTitel", "Nur Text"); await p.click("#eSpeichern"); await p.waitForSelector("#vRezept:not([hidden]) h2");

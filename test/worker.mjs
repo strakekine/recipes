@@ -240,6 +240,7 @@ ok((await call("/api/bring", { method: "POST", headers: { "content-type": "appli
 ok(W.saeubern({ titel: "x", portionen: 26, portion_einheit: "Kräcker", zutaten: [], schritte: [] }).portion_einheit === "Kräcker", "portion_einheit bleibt erhalten");
 ok(W.saeubern({ titel: "x", portionen: 4, zutaten: [], schritte: [] }).portion_einheit === "Personen", "ohne Angabe: Personen");
 ok(W.saeubern({ titel: "x", portionen: 300, zutaten: [], schritte: [] }).portionen === 300, "bis 500 Stück möglich");
+ok(W.saeubern({ titel: "x", bild_sekunde: 12.5, zutaten: [], schritte: [] }).bild_sekunde === 12.5 && !("bild_sekunde" in W.saeubern({ titel: "x", bild_sekunde: null, zutaten: [], schritte: [] })), "bild_sekunde bleibt, fehlt ohne Wert");
 
 // Einheiten in allen Schreibweisen (Befund 08.11.: „60 Parmesan“ statt „60 g“)
 const eh = W.saeubern({ titel: "x", schritte: [], zutaten: [

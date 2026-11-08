@@ -144,3 +144,15 @@ die Originale. App: „📄 Original ansehen“ (bei mehreren nummeriert) neben 
 Vorschaubild in der Liste. R2 bewusst nicht: bräuchte eine Kreditkarte bei Cloudflare. Ob D1 BLOBs als ArrayBuffer oder
 Zahlenliste zurückgibt, fängt `alsBytes` ab — am echten D1 noch nicht gesehen. Alte Rezepte haben kein Original
 (nachträglich hinzufügen gibt es noch nicht).
+
+## Standbild aus dem Video (08.11.2026, App Fassung j, Worker Fassung k — **Worker neu einfügen nötig**)
+
+Vom Nutzer: bei Videos ein Standbild als Vorschaubild, Gemini soll aussuchen. Auftrag/Schema fragen `bild_sekunde`
+(Sekunde mit dem fertigen Gericht, möglichst ohne eingeblendeten Text; sonst null), `saeubern` behält sie. Die App
+(`standbild`) nimmt die noch geladene Videodatei, springt mit einem unsichtbaren `<video>` (stumm, `playsinline`, kurz
+angespielt — iOS liefert sonst schwarze Bilder) an diese Sekunde, sonst 80 % bzw. 50 % der Länge, verwirft schwarze Bilder
+(`istSchwarz`), macht ein JPEG (höchstens 1280 px) namens `standbild.jpg` und legt es vorne in `NEU_ORIG` — es wird wie
+ein Foto-Original gespeichert. Rezept-Ansicht: „🖼️ Bild aus dem Video“, Liste: Vorschaubild. Grenzen: bei
+Bildschirmaufnahmen ist die Oberfläche von Instagram/Facebook mit drauf; ob iOS das Standbild ohne Abspielen herausgibt,
+ist **am iPhone noch nicht geprüft** (Chromium: geprüft mit selbst aufgenommenem Testvideo, schwarz → orange, Gegenprobe
+ohne Schwarz-Erkennung schlägt an). Klappt es nicht, gibt es eben kein Bild.
