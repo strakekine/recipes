@@ -162,3 +162,14 @@ Klick auf „Rezept machen“ (vor dem ersten `await`): `<video>` stumm, `playsi
 `play()`; `standbild(vor, sekunde)` springt später nur hin und räumt das Element weg. Die Vorschau sagt jetzt, ob das Bild
 mitgespeichert wird oder **warum nicht** („Video lädt nicht“, „Springen klappt nicht“, „nur schwarze Bilder, Anspielen
 gesperrt“ …) — beim nächsten Fehlschlag am iPhone diesen Text erfragen.
+
+## Memo vom Nutzer, für später (08.11.2026)
+
+1. **Rezeptkategorien** (z. B. Vorspeise, Hauptgericht, Dessert, Backen; Filter in der Liste). Die KI könnte beim Import
+   eine vorschlagen.
+2. **Suche** — gibt es schon (Titel und Zutaten, Wörter mit Leerzeichen = alle müssen passen); was dem Nutzer fehlt,
+   vor dem Bauen erfragen (Kategorien? Filter wie „schnell“, „vegetarisch“? Suche in Schritten/Notiz?).
+3. **Rezept von Hand eingeben** — „+ Rezept → Von Hand eintippen“ gibt es schon (gleicher Editor wie die KI-Vorschau);
+   vor dem Bauen erfragen, was fehlt oder unklar ist (vielleicht: Knopf ist zu versteckt).
+4. **Rezept-/Küchenmodus** — großes Schritt-für-Schritt-Bild beim Kochen, Bildschirm bleibt an (Wake Lock), Timer aus
+   dem Text („10 Minuten“), Zutaten zum Abhaken; Vorbild: Küchenmodus der Pizza- und Brot-App.
