@@ -173,3 +173,9 @@ gesperrt“ …) — beim nächsten Fehlschlag am iPhone diesen Text erfragen.
    vor dem Bauen erfragen, was fehlt oder unklar ist (vielleicht: Knopf ist zu versteckt).
 4. **Rezept-/Küchenmodus** — großes Schritt-für-Schritt-Bild beim Kochen, Bildschirm bleibt an (Wake Lock), Timer aus
    dem Text („10 Minuten“), Zutaten zum Abhaken; Vorbild: Küchenmodus der Pizza- und Brot-App.
+5. **Nur einen Link einsetzen, Gemini macht das Rezept daraus.** Stand und Einschätzung (dem Nutzer so gesagt):
+   **YouTube-Links gehen schon** (der Worker gibt sie Gemini als Video, `YOUTUBE`). **Rezept-Webseiten** (Chefkoch,
+   ZDF, Blogs) sind gut machbar: der Worker holt die Seite und liest zuerst das eingebettete schema.org/Recipe-JSON
+   (fast alle Rezeptseiten haben es, genau, ohne KI-Raterei), sonst gibt er den Seitentext an Gemini; das Original wäre
+   dann der Link. **Instagram/Facebook/TikTok-Links gehen nicht** — die Plattformen sperren Server ohne Anmeldung
+   (am 08.11. geprüft: Facebook 403), dort bleiben Bildschirmaufnahme oder Beschreibungstext.
