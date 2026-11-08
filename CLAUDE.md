@@ -95,13 +95,18 @@ der App, schneidet `Logik`…`Oberfläche` aus) und `node --no-warnings test/obe
 den echten Worker-Code: Code, KI → Vorschau → Speichern, Korrektur, Personen, Einkauf, Bring!, Neuladen, Suche,
 Löschen; `BILDER=<ordner>` speichert Bildschirmfotos). Gegenproben gemacht.
 
-## Vorgemerkt (vom Nutzer, „später“)
+## Zutaten-Editor und Farben (08.11.2026, Fassung e, vom Nutzer gewünscht)
 
-- **Zutaten bearbeiten ohne Schreibregeln** (08.11.2026): Das Textfeld verlangt, dass man Einheiten und „Zahl vorne“
-  kennt — „das kann ich nicht alles behalten“. Gewünscht: je Zutat eine Zeile mit Feldern **Menge** (Zahl),
-  **Einheit als Klappmenü** (g, kg, ml, l, EL, TL, Prise, Msp, Stück, Dose, Bund, Zehe, Becher, Pck, Scheibe,
-  Handvoll, „nach Geschmack“, „ohne Angabe“) und **Name**; „+ Zutat“, Löschen, Zwischenüberschrift. iPhone-Regeln
-  beachten (Zeilen nicht per innerHTML neu bauen, während getippt wird). Das Textfeld kann als „Als Text bearbeiten“
-  bleiben.
-- **„nach Geschmack“ grau statt gelb**: Zutaten, bei denen bewusst keine Menge gilt (Salz, Pfeffer, Kräuter), sollen
-  nicht als „fehlt“ markiert sein. Gelb nur noch, wenn wirklich etwas fehlt. Passt zum Klappmenü-Eintrag oben.
+**Editor:** Beim Bearbeiten (und in der Vorschau nach dem KI-Import) je Zutat eine Zeile: **Menge** (Textfeld mit
+`inputmode="decimal"`, versteht „2“, „0,5“, „2–3“, „½“, „1 1/2“ — `mengeLesen`/`mengeEingabe`), **Einheit als Klappmenü**
+(`EINHEIT_MENU`: –, alle `EINHEITEN`, „nach Geschmack“), **Zutat**, ✕. Dazu „+ Zutat“, „+ Überschrift“ (pinke Zeile =
+Gruppe) und „Als Text bearbeiten“ (Textfeld wie vorher, hin und zurück). Anlass: die Schreibregeln des Textfelds
+(Zahl vorne, Einheitenliste) „kann ich nicht alles behalten“. **Zeilen werden einzeln angelegt/entfernt, nie alle neu
+gebaut** (iPhone-Regel); jede Zeile trägt ihre Ausgangszutat (`_alt`), `zutatAusFeldern` übernimmt daraus Gang (solange
+der Name gleich bleibt, sonst `gangRaten`) und Hinweis („Menge nicht genannt“ fällt weg, sobald eine Menge da ist).
+Unverständliche Menge → Hinweis, kein Speichern. Einheit ohne Menge wird nicht gespeichert.
+**„nach Geschmack“ = grau statt gelb** (`istNachGeschmack`: keine Menge und Hinweis enthält Geschmack/Belieben/Gefühl/
+Gusto, auch von der KI). Im Editor blendet die Wahl das Mengenfeld aus. Gelb mit „?“ heißt nur noch: Menge fehlt.
+**Farben wie das App-Symbol** (Pop-Art): Grund Dunkellila `#170a2e`, Karten `#25124a` mit harter schwarzer Kante und
+Versatzschatten, Knöpfe Giftgrün `#c6ff3d` mit schwarzer Schrift/Kante, Akzente Pink `#ff4f6d` (Gruppen, Zähler),
+Gelb `#ffd23f` = Menge fehlt, Grau `#9d8cc4` = nach Geschmack. Symbol klein im Kopf neben „Recipes“.

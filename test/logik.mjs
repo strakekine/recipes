@@ -3,7 +3,7 @@ import { readFileSync } from "node:fs";
 const html = readFileSync(new URL("../index.html", import.meta.url), "utf8");
 const a = html.indexOf("/* ==== Logik ===="), b = html.indexOf("/* ==== Oberfläche ====");
 if(a < 0 || b < 0) throw new Error("Marken Logik/Oberfläche nicht gefunden");
-const L = new Function(html.slice(a, b) + "; return { zeileLesen, mengeText, zeileAus, zutatenText, zutatenLesen, gangRaten, einkaufDazu, einkaufText, nachGang, istVorrat, vorratListe, sucheTrifft, zahlLesen };")();
+const L = new Function(html.slice(a, b) + "; return { mengeLesen, mengeEingabe, zutatAusFeldern, istNachGeschmack, zeileLesen, mengeText, zeileAus, zutatenText, zutatenLesen, gangRaten, einkaufDazu, einkaufText, nachGang, istVorrat, vorratListe, sucheTrifft, zahlLesen };")();
 
 let fehler = 0;
 const ok = (x, t) => { console.log((x ? "✓ " : "✗ ") + t); if(!x) fehler++; };
@@ -41,6 +41,23 @@ const zur = L.zutatenLesen(txt, zut);
 gleich(zur.map(z => [z.menge, z.einheit, z.name, z.gruppe || "", z.gang]), [[200, "ml", "Sahne", "Sauce", "Kühlregal"], [null, "", "Basilikum", "Sauce", "Obst & Gemüse"]], "zurück gelesen, Gang behalten");
 ok(L.zutatenLesen("3 Zwiebeln")[0].gang === "Obst & Gemüse", "Gang geraten: Zwiebeln");
 ok(L.gangRaten("Burrata") === "Kühlregal" && L.gangRaten("Spaghetti") === "Nudeln, Reis & Trockenes" && L.gangRaten("Zauberpulver") === "Sonstiges", "Gang raten");
+
+// Editor-Felder
+gleich(L.mengeLesen("2"), { menge: 2 }, "Menge 2");
+gleich(L.mengeLesen("0,5"), { menge: 0.5 }, "Menge 0,5");
+gleich(L.mengeLesen("2-3"), { menge: 2, menge_bis: 3 }, "Menge 2-3");
+gleich(L.mengeLesen("½"), { menge: 0.5 }, "Menge ½");
+gleich(L.mengeLesen(""), { menge: null }, "leer = ohne Menge");
+gleich(L.mengeLesen("viel"), { fehler: true }, "Unsinn wird gemeldet");
+ok(L.mengeEingabe({ menge: 2, menge_bis: 3 }) === "2–3" && L.mengeEingabe({ menge: 0.5 }) === "0,5" && L.mengeEingabe({ menge: null }) === "", "Menge fürs Eingabefeld");
+const alt = { name: "Burrata", menge: null, einheit: "", hinweis: "Menge nicht genannt", gang: "Kühlregal" };
+gleich(L.zutatAusFeldern("1", "", "Burrata", alt), { name: "Burrata", einheit: "", menge: 1, gang: "Kühlregal" }, "Menge eingetragen: Hinweis „nicht genannt“ weg, Gang bleibt");
+gleich(L.zutatAusFeldern("5", "ng", "Salz", { name: "Salz", gang: "Gewürze, Öl & Saucen" }), { name: "Salz", einheit: "", menge: null, hinweis: "nach Geschmack", gang: "Gewürze, Öl & Saucen" }, "„nach Geschmack“: Menge entfällt");
+ok(L.istNachGeschmack({ menge: null, hinweis: "nach Geschmack" }) && L.istNachGeschmack({ menge: null, hinweis: "nach Gefühl" }) && !L.istNachGeschmack({ menge: null, hinweis: "Menge nicht genannt" }), "nach Geschmack/Gefühl = grau, nicht genannt = gelb");
+gleich(L.zutatAusFeldern("2", "EL", "Pesto rosso", { name: "Pesto", gang: "Konserven & Gläser" }), { name: "Pesto rosso", einheit: "EL", menge: 2, gang: "Konserven & Gläser" }, "umbenannt: Gang neu geraten");
+ok(L.zutatAusFeldern("", "", "  ") === null, "leere Zeile entfällt");
+ok(L.zutatAusFeldern("zwei", "EL", "Öl").fehler.includes("zwei"), "falsche Menge mit Fehlertext");
+ok(L.zutatAusFeldern("", "EL", "Öl").menge === null && L.zutatAusFeldern("", "EL", "Öl").einheit === "", "Einheit ohne Menge wird nicht gespeichert");
 
 // Einkaufsliste
 const v = L.vorratListe("Salz, Pfeffer, Öl");
