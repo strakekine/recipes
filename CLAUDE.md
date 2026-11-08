@@ -110,3 +110,14 @@ Gusto, auch von der KI). Im Editor blendet die Wahl das Mengenfeld aus. Gelb mit
 **Farben wie das App-Symbol** (Pop-Art): Grund Dunkellila `#170a2e`, Karten `#25124a` mit harter schwarzer Kante und
 Versatzschatten, Knöpfe Giftgrün `#c6ff3d` mit schwarzer Schrift/Kante, Akzente Pink `#ff4f6d` (Gruppen, Zähler),
 Gelb `#ffd23f` = Menge fehlt, Grau `#9d8cc4` = nach Geschmack. Symbol klein im Kopf neben „Recipes“.
+
+## Einheiten und Fotos (08.11.2026, App Fassung f, Worker Fassung h — **Worker neu einfügen nötig**)
+
+Befund vom Nutzer: eingescanntes ZDF-Rezept (Foto, mit Handnotiz) — alles erkannt, auch die Handschrift, aber **alle
+Einheiten leer** („60 Parmesan“) und fast **120 s**. Ursache Einheiten: `saeubern` ließ nur exakte Kürzel durch, Gemini
+schrieb aus. Jetzt `einheitAus()`/`EINHEIT_ALIAS` (Gramm, gr., Esslöffel, Teelöffel, Prisen, Zehen, Scheiben, Packung,
+tbsp/tsp …; cl → ml ×10), Einheit am Namensanfang wird herausgelöst („g geriebener Comté“), Auftrag und Schema
+(`description`) verlangen die Kürzel. `mediaResolution: LOW` nur noch bei Videos — bei Fotos/PDF würde das Text schlechter
+lesbar machen. Gegen die Dauer: die App verkleinert Fotos vor dem Hochladen auf höchstens 2000 px (`verkleinern`, JPEG
+0,85; PDF/Video unverändert). Ob das die 120 s wirklich drückt, ist am echten Gemini noch nicht gemessen — das Protokoll
+auf der Worker-Testseite zeigt Modell und Zeiten.

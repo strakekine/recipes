@@ -33,7 +33,7 @@ Regeln:
 - Gesprochenes zählt genauso wie Geschriebenes. Widersprechen sich Video und Beschreibung, nimm das Video und schreib den Widerspruch in die notiz.
 - Amerikanische Maße (cup, oz, lb, tbsp, tsp, °F) in g, ml, EL, TL, °C umrechnen; das Original kommt in den hinweis.
 - menge ist eine Zahl (0.5 statt "1/2"). Bei Spannen ("2 bis 3") menge = 2, menge_bis = 3.
-- einheit ist genau eine von: ${EINHEITEN.filter(Boolean).join(", ")} — oder leer, wenn es Stück ohne Wort ist ("2 Eier": menge 2, einheit leer).
+- einheit ist genau eines dieser Kürzel, so geschrieben: ${EINHEITEN.filter(Boolean).join(", ")} — also "g" statt "Gramm", "EL" statt "Esslöffel". Leer nur, wenn es Stück ohne Wort ist ("2 Eier": menge 2, einheit leer). Die Einheit gehört NIE in den Namen ("60 g geriebener Parmesan": menge 60, einheit "g", name "geriebener Parmesan").
 - name ist die Zutat ohne Menge, im Singular wo üblich ("Ei" bei einem, "Eier" bei mehreren ist auch in Ordnung).
 - gang ist genau eine von: ${GAENGE.join(", ")}.
 - gruppe nur, wenn das Rezept Zutaten aufteilt ("Für die Sauce"), sonst leer.
@@ -50,7 +50,7 @@ const SCHEMA = {
     zeit_min: { type: "NUMBER", nullable: true },
     zutaten: { type: "ARRAY", items: { type: "OBJECT", properties: {
       gruppe: { type: "STRING" }, menge: { type: "NUMBER", nullable: true },
-      menge_bis: { type: "NUMBER", nullable: true }, einheit: { type: "STRING" },
+      menge_bis: { type: "NUMBER", nullable: true }, einheit: { type: "STRING", description: "Kürzel genau so geschrieben: " + EINHEITEN.filter(Boolean).join(", ") + " — oder leer" },
       name: { type: "STRING" }, gang: { type: "STRING" }, hinweis: { type: "STRING" } },
       required: ["name"] } },
     schritte: { type: "ARRAY", items: { type: "STRING" } },
@@ -76,17 +76,37 @@ function gleich(a, b){
   return d === 0;
 }
 
+/* Am 08.11. kamen bei einem eingescannten Rezept alle Einheiten leer an („60 Parmesan“ statt „60 g“):
+   Gemini schreibt Einheiten auch aus („Gramm“, „Esslöffel“). Darum hier alle üblichen Schreibweisen. */
+const EINHEIT_ALIAS = { g: "g", gr: "g", gramm: "g", gram: "g", grams: "g", kg: "kg", kilo: "kg", kilogramm: "kg",
+  ml: "ml", milliliter: "ml", cl: "cl", l: "l", liter: "l", el: "EL", essl: "EL", "esslöffel": "EL", essloeffel: "EL",
+  tbsp: "EL", tl: "TL", teel: "TL", "teelöffel": "TL", teeloeffel: "TL", tsp: "TL", prise: "Prise", prisen: "Prise",
+  msp: "Msp", messerspitze: "Msp", "stück": "Stück", stueck: "Stück", stk: "Stück", dose: "Dose", dosen: "Dose",
+  bund: "Bund", zehe: "Zehe", zehen: "Zehe", becher: "Becher", pck: "Pck", pkg: "Pck", packung: "Pck",
+  packungen: "Pck", "päckchen": "Pck", scheibe: "Scheibe", scheiben: "Scheibe", handvoll: "Handvoll" };
+export function einheitAus(roh){
+  const k = String(roh || "").trim().toLowerCase().replace(/\.$/, "");
+  if(k === "cl") return null;                       // cl wird unten in ml umgerechnet
+  return EINHEIT_ALIAS[k] ?? (EINHEITEN.includes(roh) ? roh : "");
+}
+
 /* Was die KI liefert, wird nie ungeprüft gespeichert. */
 export function saeubern(o){
   if(!o || typeof o !== "object") return null;
   const zutaten = (Array.isArray(o.zutaten) ? o.zutaten : []).slice(0, 80).map(z => {
     if(!z || typeof z !== "object") return null;
-    const name = str(z.name, 80); if(!name) return null;
+    let name = str(z.name, 80); if(!name) return null;
     let menge = zahl(z.menge, 0, 100000), bis = zahl(z.menge_bis, 0, 100000);
+    let roh = z.einheit;
+    /* Einheit im Namen gelandet („g geriebener Parmesan“, „EL Butter“)? */
+    if(!str(roh, 20) && menge != null){
+      const w = name.match(/^(\S+)\s+(.+)$/);
+      if(w && EINHEIT_ALIAS[w[1].toLowerCase().replace(/\.$/, "")]){ roh = w[1]; name = w[2]; }
+    }
+    if(String(roh || "").trim().toLowerCase().replace(/\.$/, "") === "cl"){ roh = "ml"; if(menge != null) menge *= 10; if(bis != null) bis *= 10; }
     if(menge === 0) menge = null;
     if(menge == null || bis == null || bis <= menge) bis = null;
-    const einheit = EINHEITEN.includes(z.einheit) ? z.einheit
-      : (EINHEITEN.find(e => e && e.toLowerCase() === String(z.einheit || "").toLowerCase()) || "");
+    const einheit = einheitAus(roh) || "";
     const r = { menge, einheit, name, gang: GAENGE.includes(z.gang) ? z.gang : "Sonstiges" };
     if(bis != null) r.menge_bis = bis;
     const g = str(z.gruppe, 60); if(g) r.gruppe = g;
@@ -264,19 +284,19 @@ async function rezeptMachen(env, request, ctx){
 const ERSATZ_MODELL = "gemini-flash-lite-latest";
 const NOCHMAL = [429, 500, 502, 503, 504, 524];
 
-async function einVersuch(env, modell, parts, ohneDenken = true){
+async function einVersuch(env, modell, parts, video = false, ohneDenken = true){
   const t0 = Date.now();
   const g = await fetch(GEMINI + "/v1beta/models/" + encodeURIComponent(modell) + ":streamGenerateContent?alt=sse", {
     method: "POST", headers: { "x-goog-api-key": env.GEMINI_KEY, "content-type": "application/json" },
     body: JSON.stringify({ contents: [{ role: "user", parts }],
       generationConfig: { temperature: 0.2, responseMimeType: "application/json", responseSchema: SCHEMA,
-        mediaResolution: "MEDIA_RESOLUTION_LOW", ...(ohneDenken ? { thinkingConfig: { thinkingBudget: 0 } } : {}) } }) });
+        ...(video ? { mediaResolution: "MEDIA_RESOLUTION_LOW" } : {}), ...(ohneDenken ? { thinkingConfig: { thinkingBudget: 0 } } : {}) } }) });
   if(!g.ok){
     const a = await g.json().catch(() => null);
     const text = str(a?.error?.message || a?.[0]?.error?.message, 300);
     if(g.status === 400 && ohneDenken){
       await notiere(env, "↻ " + modell + ": 400 (" + text.slice(0, 120) + ") → nochmal ohne Denk-Einstellung");
-      return einVersuch(env, modell, parts, false);
+      return einVersuch(env, modell, parts, video, false);
     }
     return { status: g.status, fehler: "Gemini-Fehler (" + g.status + ", " + modell + "): " + text };
   }
@@ -307,7 +327,7 @@ async function generieren(env, modell, parts, text, video){
   const modelle = [...new Set(video ? [ERSATZ_MODELL, modell] : [modell, ERSATZ_MODELL])];
   let r;
   for(const [i, m] of modelle.entries()){
-    try { r = await einVersuch(env, m, parts); }
+    try { r = await einVersuch(env, m, parts, video); }
     catch(err){ r = { status: 500, fehler: "Gemini brach ab (" + m + "): " + String(err?.message || err).slice(0, 200) }; }
     if(!r.fehler){ modell = m; break; }
     if(!NOCHMAL.includes(r.status) || i === modelle.length - 1) return { fehler: r.fehler };
@@ -468,7 +488,7 @@ label.file{display:block;border:2px dashed var(--l);border-radius:12px;padding:1
 <div class="k" id="ergebnis" hidden></div>
 <div class="k"><b>Gespeichert</b><div id="liste" class="s">–</div></div>
 <details class="k" id="protK"><summary><b>Protokoll</b> <span class="s">(was der Worker zuletzt gemacht hat)</span></summary><div id="prot" class="s">–</div></details>
-<div class="s" style="text-align:center">Fassung 08.11.2026 g</div>
+<div class="s" style="text-align:center">Fassung 08.11.2026 h</div>
 </main><script>
 const $=id=>document.getElementById(id);
 let CODE="";try{CODE=localStorage.getItem("recipes_code")||""}catch{}

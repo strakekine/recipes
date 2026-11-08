@@ -147,7 +147,7 @@ details summary{cursor:pointer;color:var(--m)}
 <script>
 /* ==== Logik ==== (kein DOM; test/rezepte.mjs schneidet diesen Block aus) */
 const WORKER = "https://recipes.rjtp6r9s9h.workers.dev";
-const FASSUNG = "08.11.2026 e";
+const FASSUNG = "08.11.2026 f";
 const GAENGE = ["Obst & Gemüse", "Brot & Backwaren", "Kühlregal", "Fleisch & Fisch", "Tiefkühl",
   "Nudeln, Reis & Trockenes", "Konserven & Gläser", "Gewürze, Öl & Saucen", "Backzutaten", "Getränke", "Sonstiges"];
 const EINHEITEN = ["g", "kg", "ml", "l", "EL", "TL", "Prise", "Msp", "Stück", "Dose", "Bund", "Zehe", "Becher", "Pck", "Scheibe", "Handvoll"];
@@ -507,7 +507,22 @@ $("eSpeichern").onclick = async () => {
 /* ---- Neu per KI ---- */
 $("neuBtn").onclick = () => { $("stand").textContent = ""; zeige("neu"); };
 $("datei").onchange = () => { const f = [...$("datei").files]; $("gewaehlt").textContent = f.map(x => x.name + " (" + (x.size / 1048576).toFixed(1) + " MB)").join(", "); };
+/* Handyfotos (12 MP) auf höchstens 2000 px verkleinern: Gemini zerlegt große Bilder in viele Kacheln, das kostet
+   Zeit (am 08.11. fast 120 s für ein Foto). 2000 px reichen auch für Handschrift. */
+async function verkleinern(f){
+  if(!/^image\/(jpeg|png|heic|heif|webp)$/.test(f.type) || typeof createImageBitmap !== "function") return f;
+  try {
+    const bmp = await createImageBitmap(f);
+    const sc = Math.min(1, 2000 / Math.max(bmp.width, bmp.height));
+    if(sc === 1 && f.size < 1.5e6) return f;
+    const c = document.createElement("canvas"); c.width = Math.round(bmp.width * sc); c.height = Math.round(bmp.height * sc);
+    c.getContext("2d").drawImage(bmp, 0, 0, c.width, c.height);
+    const b = await new Promise(r => c.toBlob(r, "image/jpeg", 0.85));
+    return b && (sc < 1 || b.size < f.size) ? new File([b], f.name.replace(/\.\w+$/, "") + ".jpg", { type: "image/jpeg" }) : f;
+  } catch { return f; }
+}
 async function hoch(f){
+  f = await verkleinern(f);
   const typ = f.type || "application/octet-stream";
   try {
     const { d } = await api("/api/datei-start?name=" + encodeURIComponent(f.name) + "&groesse=" + f.size + "&typ=" + encodeURIComponent(typ), { method: "POST" });

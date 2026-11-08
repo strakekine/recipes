@@ -129,7 +129,7 @@ ok(ue.d?.rezept?.titel === "Cremige Gnocchi" && ue.d.modell === "gemini-flash-li
 ok((await call("/api/protokoll")).d.eintraege.some(e => e.was.startsWith("↻") && e.was.includes("high demand")), "Wiederholung steht im Protokoll");
 G.ueberlastet = false;
 const genBody = JSON.parse(G.aufrufe.filter(a => a.url.includes(":streamGenerateContent")).at(-1).opt.body);
-ok(genBody.generationConfig.mediaResolution === "MEDIA_RESOLUTION_LOW" && genBody.generationConfig.thinkingConfig.thinkingBudget === 0, "niedrige Videoauflösung, Denken aus");
+ok(!("mediaResolution" in genBody.generationConfig) && genBody.generationConfig.thinkingConfig.thinkingBudget === 0, "Text/Bild: volle Auflösung, Denken aus");
 
 // Modell lehnt thinkingBudget 0 ab → derselbe Versuch ohne Einstellung
 const vorher = globalThis.fetch; let ohne = 0;
@@ -149,7 +149,7 @@ const mov = { name: "files/abc123", uri: "https://generativelanguage.googleapis.
 const vr = await call("/api/rezept", { ...auftrag, body: JSON.stringify({ dateien: [mov], auftrag: "a-test-123" }) });
 ok(vr.d?.modell === "gemini-flash-lite-latest" && G.modelle[0] === "gemini-flash-lite-latest", "Video: leichtes Modell zuerst");
 const vBody = JSON.parse(G.aufrufe.find(a => a.url.includes(":streamGenerateContent")).opt.body);
-ok(vBody.contents[0].parts[0].file_data.mime_type === "video/mov", "video/quicktime → video/mov");
+ok(vBody.contents[0].parts[0].file_data.mime_type === "video/mov" && vBody.generationConfig.mediaResolution === "MEDIA_RESOLUTION_LOW", "video/quicktime → video/mov, Video in niedriger Auflösung");
 ok(W.geminiMime("video/mp4") === "video/mp4", "mp4 bleibt");
 const ab = await call("/api/ergebnis/a-test-123");
 ok(ab.r.status === 200 && ab.d?.rezept?.titel === "Cremige Gnocchi", "Ergebnis per Auftrag abholbar");
@@ -210,6 +210,14 @@ ok(ld["@type"] === "Recipe" && ld.recipeIngredient.length === 3 && ld.recipeIngr
 ok(!seite.includes("<b>") && seite.split("</script>").length === 2, "Seite escaped Titel und Zeilen");
 ok((await worker.fetch(new Request("https://w/bring/aaaaaaaaaaaaaaaa"), env)).status === 404, "unbekannte Bring!-Liste: 404");
 ok((await call("/api/bring", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ zeilen: [] }) })).r.status === 400, "leere Liste abgewiesen");
+
+// Einheiten in allen Schreibweisen (Befund 08.11.: „60 Parmesan“ statt „60 g“)
+const eh = W.saeubern({ titel: "x", schritte: [], zutaten: [
+  { name: "geriebener Parmesan", menge: 60, einheit: "Gramm" }, { name: "Butter", menge: 6, einheit: "Esslöffel" },
+  { name: "Mehl", menge: 150, einheit: "gr." }, { name: "Cayennepfeffer", menge: 1, einheit: "Prisen" },
+  { name: "g geriebener Comté", menge: 250, einheit: "" }, { name: "Rum", menge: 2, einheit: "cl" },
+  { name: "Schnittlauch", menge: 2, menge_bis: 3, einheit: "EL" }, { name: "Eier", menge: 2, einheit: "" }] }).zutaten;
+ok(eh.map(z => z.einheit).join() === "g,EL,g,Prise,g,ml,EL," && eh[4].name === "geriebener Comté" && eh[5].menge === 20, "Einheiten: Gramm/Esslöffel/gr./Prisen/im Namen/cl → Kürzel");
 
 // Gegenprobe: saeubern ohne Prüfung würde Mengen ohne Zahl durchlassen
 ok(W.saeubern({ titel: "x", zutaten: [{ name: "a", menge: "viel" }], schritte: [] }).zutaten[0].menge === null, "Text als Menge wird null");
