@@ -94,3 +94,14 @@ Zugang, Upload, 202, Säubern, Tagesgrenze, Speichern, Bring!-Seite, Modellwahl,
 der App, schneidet `Logik`…`Oberfläche` aus) und `node --no-warnings test/oberflaeche.mjs` (Browser, 390 px, gegen
 den echten Worker-Code: Code, KI → Vorschau → Speichern, Korrektur, Personen, Einkauf, Bring!, Neuladen, Suche,
 Löschen; `BILDER=<ordner>` speichert Bildschirmfotos). Gegenproben gemacht.
+
+## Vorgemerkt (vom Nutzer, „später“)
+
+- **Zutaten bearbeiten ohne Schreibregeln** (08.11.2026): Das Textfeld verlangt, dass man Einheiten und „Zahl vorne“
+  kennt — „das kann ich nicht alles behalten“. Gewünscht: je Zutat eine Zeile mit Feldern **Menge** (Zahl),
+  **Einheit als Klappmenü** (g, kg, ml, l, EL, TL, Prise, Msp, Stück, Dose, Bund, Zehe, Becher, Pck, Scheibe,
+  Handvoll, „nach Geschmack“, „ohne Angabe“) und **Name**; „+ Zutat“, Löschen, Zwischenüberschrift. iPhone-Regeln
+  beachten (Zeilen nicht per innerHTML neu bauen, während getippt wird). Das Textfeld kann als „Als Text bearbeiten“
+  bleiben.
+- **„nach Geschmack“ grau statt gelb**: Zutaten, bei denen bewusst keine Menge gilt (Salz, Pfeffer, Kräuter), sollen
+  nicht als „fehlt“ markiert sein. Gelb nur noch, wenn wirklich etwas fehlt. Passt zum Klappmenü-Eintrag oben.
