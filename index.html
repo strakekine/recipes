@@ -45,7 +45,8 @@ button:disabled{opacity:.5}
 a{color:var(--lime)}
 .li{display:flex;gap:12px;align-items:center;padding:12px;border:2px solid var(--kante);border-radius:14px;background:var(--p);margin:10px 0;cursor:pointer;box-shadow:3px 3px 0 var(--kante)}
 .li b{display:block}.li .s{font-size:13px}
-.li .icon{width:44px;height:44px;border-radius:12px;background:var(--lila);border:2px solid var(--kante);display:flex;align-items:center;justify-content:center;font-size:22px;flex:none}
+.li .icon img{width:100%;height:100%;object-fit:cover;border-radius:10px}
+.li .icon{overflow:hidden;width:44px;height:44px;border-radius:12px;background:var(--lila);border:2px solid var(--kante);display:flex;align-items:center;justify-content:center;font-size:22px;flex:none}
 .leer{text-align:center;padding:30px 10px}
 label.file{display:block;border:2px dashed var(--lime);border-radius:14px;padding:18px;text-align:center;cursor:pointer;margin-top:10px}
 h2{margin:4px 0 4px;font-size:26px;line-height:1.15;font-weight:900}
@@ -152,7 +153,7 @@ details summary{cursor:pointer;color:var(--m)}
 <script>
 /* ==== Logik ==== (kein DOM; test/rezepte.mjs schneidet diesen Block aus) */
 const WORKER = "https://recipes.rjtp6r9s9h.workers.dev";
-const FASSUNG = "08.11.2026 h";
+const FASSUNG = "08.11.2026 i";
 const GAENGE = ["Obst & Gemüse", "Brot & Backwaren", "Kühlregal", "Fleisch & Fisch", "Tiefkühl",
   "Nudeln, Reis & Trockenes", "Konserven & Gläser", "Gewürze, Öl & Saucen", "Backzutaten", "Getränke", "Sonstiges"];
 const EINHEITEN = ["g", "kg", "ml", "l", "EL", "TL", "Prise", "Msp", "Stück", "Dose", "Bund", "Zehe", "Becher", "Pck", "Scheibe", "Handvoll"];
@@ -347,6 +348,9 @@ let EINKAUF = lies("recipes_einkauf", []);
 let VORRAT = lies("recipes_vorrat", STANDARD_VORRAT);
 let ANSICHT = "liste", OFFEN = null, PERS = 2, EDIT = null;
 
+const bildUrl = o => WORKER + "/bild/" + o.id;
+const vorschau = r => { const o = (r.originale || []).find(x => /^image\//.test(x.typ)); return o ? bildUrl(o) : ""; };
+let NEU_ORIG = [];   // Fotos/PDFs aus dem letzten KI-Import, werden beim ersten Speichern mitgeschickt
 function toast(t){ const d = document.createElement("div"); d.className = "toast"; d.textContent = t; document.body.appendChild(d); setTimeout(() => d.remove(), 2200); }
 
 async function api(pfad, opt = {}){
@@ -375,7 +379,7 @@ $("tE").onclick = () => zeige("einkauf");
 document.querySelectorAll("[data-zurueck]").forEach(b => b.onclick = () => {
   const zumRezept = ANSICHT === "edit" && EDIT?.id && OFFEN?.id === EDIT.id;
   if(ANSICHT === "edit" && !EDIT?.id && EDIT?.zutaten?.length && !confirm("Das Rezept ist noch nicht gespeichert. Trotzdem verwerfen?")) return;
-  EDIT = null; zeige(zumRezept ? "rezept" : "liste");
+  EDIT = null; NEU_ORIG = []; zeige(zumRezept ? "rezept" : "liste");
 });
 
 /* ---- Liste ---- */
@@ -385,7 +389,7 @@ function liste(){
   $("liste").innerHTML = !REZEPTE.length
     ? '<div class="leer s">Noch keine Rezepte.<br>Tipp auf <b>+ Rezept</b>: PDF, Screenshot oder Video eines Reels wählen.</div>'
     : !treffer.length ? '<div class="leer s">Nichts gefunden.</div>'
-    : treffer.map(r => `<div class="li" data-id="${esc(r.id)}"><div class="icon">${r.quelle && /facebook|instagram|tiktok|youtu/i.test(r.quelle) ? "🎬" : "🍽️"}</div>
+    : treffer.map(r => `<div class="li" data-id="${esc(r.id)}"><div class="icon">${vorschau(r) ? `<img src="${esc(vorschau(r))}" alt="" loading="lazy">` : r.quelle && /facebook|instagram|tiktok|youtu/i.test(r.quelle) ? "🎬" : "🍽️"}</div>
       <div><b>${esc(r.titel)}</b><span class="s">${r.zutaten.length} Zutaten${r.zeit_min ? " · " + r.zeit_min + " min" : ""}${r.portionen ? " · für " + r.portionen + " " + esc(portionWort(r)) : ""}</span></div></div>`).join("");
   $("liste").querySelectorAll(".li").forEach(el => el.onclick = () => { OFFEN = REZEPTE.find(r => r.id === el.dataset.id); PERS = OFFEN.portionen || 2; zeige("rezept"); });
 }
@@ -410,7 +414,8 @@ function rezeptZeigen(){
   }
   $("vRezept").innerHTML = `<button class="zurueck" id="zur">‹ Rezepte</button>
     <h2>${esc(r.titel)}</h2>
-    <div class="s">${[r.zeit_min ? "⏱ " + r.zeit_min + " min" : "", r.quelle ? `<a href="${esc(r.quelle)}" target="_blank" rel="noopener">▶ Original ansehen</a>` : ""].filter(Boolean).join(" · ")}</div>
+    <div class="s">${[r.zeit_min ? "⏱ " + r.zeit_min + " min" : "", r.quelle ? `<a href="${esc(r.quelle)}" target="_blank" rel="noopener">▶ Original ansehen</a>` : "",
+      ...(r.originale || []).map((o, i, a) => `<a href="${esc(bildUrl(o))}" target="_blank" rel="noopener">📄 Original${a.length > 1 ? " " + (i + 1) : ""} ansehen</a>`)].filter(Boolean).join(" · ")}</div>
     <div class="pz"><span id="pWort">${esc(portionWort(r))}</span> <button class="g" id="pm">−</button><b>${PERS}</b><button class="g" id="pp">+</button>
       ${r.portionen ? `<span class="s">(Rezept: ${r.portionen})</span>` : ""}</div>
     <div class="r"><button id="aufListe">🛒 Auf die Einkaufsliste</button><button class="g" id="direktBring">Direkt in Bring!</button></div>
@@ -446,7 +451,7 @@ function bearbeiten(r){
   $("eNotiz").value = EDIT.notiz || ""; $("eQuelle").value = EDIT.quelle || ""; $("eStand").textContent = "";
   zeige("edit");
 }
-$("handBtn").onclick = () => bearbeiten(null);
+$("handBtn").onclick = () => { NEU_ORIG = []; bearbeiten(null); };
 /* Knöpfe werden nicht neu gebaut, nur ihre Markierung wechselt — tippen im Feld bleibt ungestört. */
 function chipsMarkieren(){ const v = $("eEinheit").value.trim() || "Personen"; $("eChips").querySelectorAll("button").forEach(b => b.classList.toggle("on", b.textContent === v)); }
 $("eChips").querySelectorAll("button").forEach(b => b.onclick = () => { $("eEinheit").value = b.textContent === "Personen" ? "" : b.textContent; chipsMarkieren(); });
@@ -509,9 +514,18 @@ $("eSpeichern").onclick = async () => {
   const id = r.id || ("r" + Date.now().toString(36) + Math.random().toString(36).slice(2, 6));
   $("eSpeichern").disabled = true; $("eStand").textContent = "Speichere …";
   try {
-    const { d } = await api("/api/rezepte/" + id, { method: "PUT", headers: { "content-type": "application/json" }, body: JSON.stringify(r) });
+    let { d } = await api("/api/rezepte/" + id, { method: "PUT", headers: { "content-type": "application/json" }, body: JSON.stringify(r) });
+    let hinweis = "";
+    if(!r.id && NEU_ORIG.length){
+      for(const [i, f] of NEU_ORIG.entries()){
+        $("eStand").textContent = "Speichere Original " + (i + 1) + "/" + NEU_ORIG.length + " …";
+        try { ({ d } = await api("/api/original/" + id + "?typ=" + encodeURIComponent(f.type) + "&name=" + encodeURIComponent(f.name), { method: "PUT", body: f })); }
+        catch(e){ hinweis = " — Original nicht gespeichert: " + e.message; }
+      }
+      NEU_ORIG = [];
+    }
     REZEPTE = [d.rezept, ...REZEPTE.filter(x => x.id !== id)]; schreib("recipes_rezepte", REZEPTE);
-    OFFEN = d.rezept; PERS = d.rezept.portionen || 2; EDIT = null; zeige("rezept"); toast("Gespeichert ✓");
+    OFFEN = d.rezept; PERS = d.rezept.portionen || 2; EDIT = null; zeige("rezept"); toast("Gespeichert ✓" + hinweis);
   } catch(e){ $("eStand").innerHTML = '<span class="f">' + esc(e.message) + "</span>"; }
   $("eSpeichern").disabled = false;
 };
@@ -534,7 +548,6 @@ async function verkleinern(f){
   } catch { return f; }
 }
 async function hoch(f){
-  f = await verkleinern(f);
   const typ = f.type || "application/octet-stream";
   try {
     const { d } = await api("/api/datei-start?name=" + encodeURIComponent(f.name) + "&groesse=" + f.size + "&typ=" + encodeURIComponent(typ), { method: "POST" });
@@ -554,7 +567,13 @@ $("los").onclick = async () => {
   if(!files.length && !text){ $("stand").textContent = "Erst eine Datei wählen oder Text einfügen."; return; }
   $("los").disabled = true; const dateien = []; let uhr;
   try {
-    for(const [i, f] of files.entries()){ $("stand").textContent = "Lade hoch " + (i + 1) + "/" + files.length + " (" + (f.size / 1048576).toFixed(0) + " MB) …"; dateien.push(await hoch(f)); }
+    NEU_ORIG = [];
+    for(const [i, f0] of files.entries()){
+      $("stand").textContent = "Lade hoch " + (i + 1) + "/" + files.length + " (" + (f0.size / 1048576).toFixed(0) + " MB) …";
+      const f = await verkleinern(f0);
+      dateien.push(await hoch(f));
+      if(!/^video\//.test(f.type) && NEU_ORIG.length < 5) NEU_ORIG.push(f);
+    }
     const t0 = Date.now(), auftrag = "a" + Date.now().toString(36) + Math.random().toString(36).slice(2, 8); let TXT = "KI liest das Rezept";
     uhr = setInterval(() => { $("stand").textContent = TXT + " … " + Math.round((Date.now() - t0) / 1000) + " s"; }, 1000);
     for(;;){

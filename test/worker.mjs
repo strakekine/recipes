@@ -14,8 +14,10 @@ const worker = W.default;
 let fehlerZahl = 0;
 const ok = (b, t) => { console.log((b ? "✓ " : "✗ ") + t); if(!b) fehlerZahl++; };
 
+let LETZTE_DB;
+const db0 = () => ENV_DB;
 function d1(){
-  const db = new DatabaseSync(":memory:");
+  const db = new DatabaseSync(":memory:"); LETZTE_DB = db;
   const stmt = (sql, args = []) => ({
     bind: (...a) => stmt(sql, a),
     run: async () => { db.prepare(sql).run(...args); return { success: true }; },
@@ -53,6 +55,7 @@ globalThis.fetch = async (url, opt = {}) => {
 };
 
 const env = { GEMINI_KEY: "KEY", FAMILIEN_CODE: "pizza42", DB: d1() };
+const ENV_DB = LETZTE_DB;
 const req = (pfad, o = {}) => new Request("https://rezepte.example.workers.dev" + pfad,
   { ...o, headers: { "x-code": "pizza42", ...(o.headers || {}) } });
 const call = async (pfad, o, e = env) => { const r = await worker.fetch(req(pfad, o), e); return { r, d: await r.clone().json().catch(() => null) }; };
@@ -200,6 +203,28 @@ ok(li.d.rezepte.length === 1 && li.d.rezepte[0].titel === "Neu", "Liste");
 ok((await call("/api/rezepte/../../x", { method: "DELETE" })).r.status !== 200, "ungültige id beim Löschen abgewiesen");
 await call("/api/rezepte/abc123xyz", { method: "DELETE" });
 ok((await call("/api/rezepte")).d.rezepte.length === 0, "gelöscht");
+
+// Originale (Foto/PDF zum Rezept)
+await call("/api/rezepte/orig12345", { method: "PUT", headers: { "content-type": "application/json" }, body: JSON.stringify({ ...r, titel: "Mit Foto" }) });
+const gross = new Uint8Array(900 * 1024).map((_, i) => (i * 7) % 251);
+const og1 = await call("/api/original/orig12345?typ=image%2Fjpeg&name=scan.jpg", { method: "PUT", body: gross });
+const o1 = og1.d?.rezept?.originale?.[0];
+ok(og1.r.status === 200 && /^[a-z0-9]{24}$/.test(o1?.id) && o1.groesse === gross.length, "Original gespeichert, zufällige id");
+const bildAntwort = await worker.fetch(new Request("https://w/bild/" + o1.id), env);
+const zurueck = new Uint8Array(await bildAntwort.arrayBuffer());
+ok(bildAntwort.status === 200 && bildAntwort.headers.get("content-type") === "image/jpeg" && zurueck.length === gross.length && zurueck.every((b, i) => b === gross[i]), "900 KB in drei Stücken, kommt unverändert zurück (ohne Code)");
+ok(db0().prepare("SELECT COUNT(*) n FROM originale WHERE id = ?").get(o1.id).n === 3, "in 400-KB-Stücke geteilt");
+ok((await call("/api/original/orig12345?typ=video%2Fmp4", { method: "PUT", body: new Uint8Array(10) })).r.status === 415, "Video wird nicht als Original gespeichert");
+ok((await call("/api/original/orig12345?typ=application%2Fpdf", { method: "PUT", body: new Uint8Array(2 * 1024 * 1024 + 1) })).r.status === 413, "über 2 MB abgelehnt");
+ok((await call("/api/original/gibtsnicht?typ=image%2Fjpeg", { method: "PUT", body: new Uint8Array(10) })).r.status === 404, "unbekanntes Rezept: 404");
+for(let i = 0; i < 4; i++) await call("/api/original/orig12345?typ=application%2Fpdf", { method: "PUT", body: new Uint8Array(10) });
+ok((await call("/api/original/orig12345?typ=image%2Fjpeg", { method: "PUT", body: new Uint8Array(10) })).r.status === 409, "höchstens 5 je Rezept");
+const nachEdit = await call("/api/rezepte/orig12345", { method: "PUT", headers: { "content-type": "application/json" }, body: JSON.stringify({ ...(await call("/api/rezepte")).d.rezepte.find(x => x.id === "orig12345"), titel: "Umbenannt" }) });
+ok(nachEdit.d.rezept.originale.length === 5, "Bearbeiten behält die Originale");
+ok(W.saeubern({ titel: "x", zutaten: [], schritte: [], originale: [{ id: "kurz", typ: "image/jpeg" }, { id: "a".repeat(24), typ: "text/html" }] }).originale.length === 0, "fremde Original-Einträge werden verworfen");
+await call("/api/rezepte/orig12345", { method: "DELETE" });
+ok((await worker.fetch(new Request("https://w/bild/" + o1.id), env)).status === 404 && db0().prepare("SELECT COUNT(*) n FROM originale WHERE rezept = 'orig12345'").get().n === 0, "Rezept löschen löscht die Originale");
+ok((await worker.fetch(new Request("https://w/bild/" + "z".repeat(24)), env)).status === 404, "unbekanntes Bild: 404");
 
 // Bring!
 const br = await call("/api/bring", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ titel: "Gnocchi <b>", zeilen: ["500 g Gnocchi", "2 Zehen Knoblauch", "Basilikum </script>"] }) });

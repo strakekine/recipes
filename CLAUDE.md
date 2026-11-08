@@ -130,3 +130,17 @@ Befund vom Nutzer: Croustillants „für 24 bis 28 Kräcker“ kamen als „26 P
 App: `portionWort(r)` statt fest „Personen“ über den −/+-Knöpfen, in der Liste („für 26 Kräcker“), im Editor
 „Rezept ergibt [Zahl] [Einheit]“ mit Vorschlägen als Knöpfen darunter (`#eChips`, Fassung h — die erste Fassung hatte eine `datalist`, die Safari nur versteckt über der Tastatur zeigt; vom Nutzer: „alleine hätte ich das nie gefunden“). Alte Rezepte ohne Feld zeigen „Personen“ — beim Bearbeiten
 nachtragen. Kleinkram dabei: kein „·“ mehr hinter der Zeit, wenn es keinen Original-Link gibt.
+
+## Originale zum Rezept (08.11.2026, App Fassung i, Worker Fassung j — **Worker neu einfügen nötig**)
+
+Vom Nutzer: „schade, dass er bei JPEG oder PDF kein Original dazu speichert“. Jetzt: Fotos und PDFs aus einem KI-Import
+(höchstens 5, die App verkleinert Fotos vorher, `NEU_ORIG`) werden **beim ersten Speichern** nachgeschickt
+(`PUT /api/original/<rezept>?typ=&name=`, Körper = Datei). Der Worker legt sie in D1 ab (Tabelle `originale`, BLOB in
+Stücken zu 400 KB wegen der 2-MB-Grenze je Zeile; je Datei höchstens 2 MB, sonst 413 und Hinweis in der App; nur
+JPEG/PNG/WebP/HEIC/PDF, **Videos nie** — dort bleibt der Reel-Link das Original) und hängt `{id, typ, name, groesse}` an
+`rezept.originale` (`saeubern` lässt nur 24-stellige ids und diese Typen durch, Bearbeiten behält sie). Abruf
+`GET /bild/<id>` **ohne Code** (damit `<img>` und Links gehen; id zufällig, 24 Zeichen aus a–z0–9). Rezept löschen löscht
+die Originale. App: „📄 Original ansehen“ (bei mehreren nummeriert) neben „▶ Original ansehen“, erstes Foto als
+Vorschaubild in der Liste. R2 bewusst nicht: bräuchte eine Kreditkarte bei Cloudflare. Ob D1 BLOBs als ArrayBuffer oder
+Zahlenliste zurückgibt, fängt `alsBytes` ab — am echten D1 noch nicht gesehen. Alte Rezepte haben kein Original
+(nachträglich hinzufügen gibt es noch nicht).

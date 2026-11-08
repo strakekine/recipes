@@ -126,6 +126,8 @@ export function saeubern(o){
     schritte: (Array.isArray(o.schritte) ? o.schritte : []).map(s => str(s, 1000)).filter(Boolean).slice(0, 60),
     notiz: str(o.notiz, 1000),
     quelle: str(o.quelle, 500),
+    originale: (Array.isArray(o.originale) ? o.originale : []).filter(x => x && /^[a-z0-9]{24}$/.test(x.id) && ORIGINAL_TYPEN.test(x.typ))
+      .slice(0, ORIGINALE_JE_REZEPT).map(x => ({ id: x.id, typ: x.typ, name: str(x.name, 100), groesse: zahl(x.groesse, 1, ORIGINAL_MAX) })),
   };
 }
 
@@ -138,6 +140,7 @@ async function tabellen(db){
   await db.prepare("CREATE TABLE IF NOT EXISTS importe (tag TEXT PRIMARY KEY, n INTEGER NOT NULL)").run();
   await db.prepare("CREATE TABLE IF NOT EXISTS protokoll (t INTEGER NOT NULL, was TEXT NOT NULL)").run();
   await db.prepare("CREATE TABLE IF NOT EXISTS ergebnisse (id TEXT PRIMARY KEY, daten TEXT NOT NULL, t INTEGER NOT NULL)").run();
+  await db.prepare("CREATE TABLE IF NOT EXISTS originale (id TEXT NOT NULL, nr INTEGER NOT NULL, rezept TEXT NOT NULL, typ TEXT NOT NULL, name TEXT, daten BLOB NOT NULL, t INTEGER NOT NULL, PRIMARY KEY (id, nr))").run();
 }
 
 /* Kurzes Protokoll der Importe (sichtbar unten auf der Testseite): zeigt, ob die KI fertig
@@ -377,6 +380,58 @@ async function bringSeite(env, id){
     { headers: { "content-type": "text/html; charset=utf-8", "cache-control": "no-store" } });
 }
 
+/* ---------- Originale (Foto/PDF zum Rezept) ----------
+   Vom Nutzer gewünscht (08.11.2026): das eingescannte Rezept samt Handnotizen soll mit dem Rezept bleiben.
+   Liegt in D1 (keine Extra-Einrichtung; R2 bräuchte eine Kreditkarte bei Cloudflare), als BLOB in Stücken zu
+   400 KB, weil D1 eine Zeile auf 2 MB begrenzt. Höchstens 2 MB je Datei — Fotos verkleinert die App vorher,
+   Videos werden nicht gespeichert (dort ist der Link zum Reel das Original). Abruf über /bild/<id> ohne Code,
+   damit <img> und Links funktionieren; die id ist zufällig (24 Zeichen) und nicht zu erraten. */
+const ORIGINAL_MAX = 2 * 1024 * 1024;
+const ORIGINAL_STUECK = 400 * 1024;
+const ORIGINALE_JE_REZEPT = 5;
+const ORIGINAL_TYPEN = /^(image\/(jpeg|png|webp|heic|heif)|application\/pdf)$/;
+const zufall = n => [...crypto.getRandomValues(new Uint8Array(n))].map(b => "abcdefghijklmnopqrstuvwxyz0123456789"[b % 36]).join("");
+
+async function originalSpeichern(env, request, rid, url){
+  const db = env.DB;
+  const zeile = await db.prepare("SELECT daten FROM rezepte WHERE id = ?").bind(rid).first();
+  if(!zeile) return fehler("Rezept nicht gefunden.", 404);
+  const rezept = JSON.parse(zeile.daten);
+  const typ = str(url.searchParams.get("typ"), 60);
+  if(!ORIGINAL_TYPEN.test(typ)) return fehler("Diese Dateiart wird nicht als Original gespeichert: " + (typ || "unbekannt"), 415);
+  if((rezept.originale || []).length >= ORIGINALE_JE_REZEPT) return fehler("Höchstens " + ORIGINALE_JE_REZEPT + " Originale je Rezept.", 409);
+  const bytes = new Uint8Array(await request.arrayBuffer());
+  if(!bytes.length) return fehler("Leere Datei.", 400);
+  if(bytes.length > ORIGINAL_MAX) return fehler("Original zu groß (über 2 MB), nicht gespeichert.", 413);
+  const id = zufall(24), jetzt = Date.now(), name = str(url.searchParams.get("name"), 100);
+  const befehle = [];
+  for(let nr = 0, ab = 0; ab < bytes.length; nr++, ab += ORIGINAL_STUECK)
+    befehle.push(db.prepare("INSERT INTO originale (id, nr, rezept, typ, name, daten, t) VALUES (?, ?, ?, ?, ?, ?, ?)")
+      .bind(id, nr, rid, typ, name, bytes.slice(ab, ab + ORIGINAL_STUECK), jetzt));
+  if(db.batch) await db.batch(befehle); else for(const b of befehle) await b.run();
+  rezept.originale = [...(rezept.originale || []), { id, typ, name, groesse: bytes.length }];
+  rezept.geaendert = jetzt;
+  await db.prepare("UPDATE rezepte SET daten = ?, geaendert = ? WHERE id = ?").bind(JSON.stringify(rezept), jetzt, rid).run();
+  return json({ rezept });
+}
+
+const alsBytes = v => v instanceof Uint8Array ? v : v instanceof ArrayBuffer ? new Uint8Array(v)
+  : ArrayBuffer.isView(v) ? new Uint8Array(v.buffer, v.byteOffset, v.byteLength) : Uint8Array.from(v || []);
+
+async function originalZeigen(env, id){
+  if(!env.DB) return new Response("Keine Datenbank.", { status: 503 });
+  await tabellen(env.DB);
+  const r = await env.DB.prepare("SELECT typ, name, daten FROM originale WHERE id = ? ORDER BY nr").bind(id).all();
+  const teile = r.results || [];
+  if(!teile.length) return new Response("Nicht gefunden.", { status: 404 });
+  const stuecke = teile.map(t => alsBytes(t.daten));
+  const alles = new Uint8Array(stuecke.reduce((n, s) => n + s.length, 0));
+  let ab = 0; for(const s of stuecke){ alles.set(s, ab); ab += s.length; }
+  const name = (teile[0].name || "original").replace(/[^\w.\- ]/g, "_");
+  return new Response(alles, { headers: { "content-type": teile[0].typ, "cache-control": "private, max-age=86400",
+    "content-disposition": "inline; filename=\"" + name + "\"" } });
+}
+
 /* ---------- Rezepte speichern ---------- */
 async function rezepte(env, request, id){
   const db = env.DB;
@@ -387,6 +442,7 @@ async function rezepte(env, request, id){
   if(!/^[\w-]{6,40}$/.test(id || "")) return fehler("Ungültige Rezept-id.", 400);
   if(request.method === "DELETE"){
     await db.prepare("DELETE FROM rezepte WHERE id = ?").bind(id).run();
+    await db.prepare("DELETE FROM originale WHERE rezept = ?").bind(id).run();
     return json({ ok: true });
   }
   if(request.method === "PUT"){
@@ -420,6 +476,8 @@ export default {
       return new Response(TESTSEITE, { headers: { "content-type": "text/html; charset=utf-8", "cache-control": "no-store" } });
     const b = url.pathname.match(/^\/bring\/([\w]{16})$/);
     if(b && request.method === "GET") return bringSeite(env, b[1]);
+    const bild = url.pathname.match(/^\/bild\/([a-z0-9]{24})$/);
+    if(bild && request.method === "GET") return originalZeigen(env, bild[1]);
     if(!url.pathname.startsWith("/api/")) return new Response("Nicht gefunden.", { status: 404 });
 
     if(!env.FAMILIEN_CODE) return mit(fehler("Secret FAMILIEN_CODE fehlt im Worker.", 503));
@@ -455,6 +513,8 @@ export default {
       if(!env.DB) return mit(fehler("D1-Datenbank (Binding DB) fehlt im Worker.", 503));
       await tabellen(env.DB);
       if(url.pathname === "/api/bring" && request.method === "POST") return mit(await bringAnlegen(env, request, basis));
+      const og = url.pathname.match(/^\/api\/original\/([\w-]{6,40})$/);
+      if(og && request.method === "PUT") return mit(await originalSpeichern(env, request, og[1], url));
       const m = url.pathname.match(/^\/api\/rezepte(?:\/([^/]+))?$/);
       if(m) return mit(await rezepte(env, request, m[1]));
       return mit(fehler("Nicht gefunden.", 404));
@@ -491,7 +551,7 @@ label.file{display:block;border:2px dashed var(--l);border-radius:12px;padding:1
 <div class="k" id="ergebnis" hidden></div>
 <div class="k"><b>Gespeichert</b><div id="liste" class="s">–</div></div>
 <details class="k" id="protK"><summary><b>Protokoll</b> <span class="s">(was der Worker zuletzt gemacht hat)</span></summary><div id="prot" class="s">–</div></details>
-<div class="s" style="text-align:center">Fassung 08.11.2026 i</div>
+<div class="s" style="text-align:center">Fassung 08.11.2026 j</div>
 </main><script>
 const $=id=>document.getElementById(id);
 let CODE="";try{CODE=localStorage.getItem("recipes_code")||""}catch{}

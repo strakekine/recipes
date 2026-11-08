@@ -25,6 +25,8 @@ const echt = globalThis.fetch;
 globalThis.fetch = async (u, o) => {
   u = String(u);
   if(u.includes(":streamGenerateContent")) return new Response("data: " + JSON.stringify({ candidates: [{ content: { parts: [{ text: JSON.stringify(KI) }] } }] }) + "\n\n");
+  if(u.endsWith("/upload/v1beta/files")) return new Response("{}", { headers: { "x-goog-upload-url": "https://generativelanguage.googleapis.com/upload/sitzung" } });
+  if(u.includes("/v1beta/files/")) return Response.json({ state: "ACTIVE" });
   if(u.includes("googleapis")) return Response.json({ name: "m" });
   return echt(u, o);
 };
@@ -122,6 +124,28 @@ await p.click("#suche"); await p.type("#suche", "sahne", { delay: 30 });
 ok(await p.evaluate(() => document.activeElement.id) === "suche" && (await p.textContent("#liste")).includes("Gnocchi"), "Suche nach Zutat, Fokus bleibt");
 await p.fill("#suche", "lachs"); ok((await p.textContent("#liste")).includes("Nichts gefunden"), "Suche ohne Treffer");
 await p.fill("#suche", "");
+
+// Foto-Import: Original wird mitgespeichert, Vorschaubild in der Liste
+await p.route("https://generativelanguage.googleapis.com/**", r => r.fulfill({ status: 200, headers: { "access-control-allow-origin": "*", "content-type": "application/json" },
+  body: JSON.stringify({ file: { name: "files/foto1", uri: "https://generativelanguage.googleapis.com/v1beta/files/foto1", mimeType: "image/jpeg" } }) }));
+const png = Buffer.from("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==", "base64");
+await p.click("#neuBtn"); await p.setInputFiles("#datei", { name: "scan.png", mimeType: "image/png", buffer: png });
+await p.click("#los"); await p.waitForSelector("#vEdit:not([hidden])");
+await p.fill("#eTitel", "Croustillants"); await p.click("#eSpeichern");
+await p.waitForSelector("#vRezept:not([hidden]) h2");
+const origLink = p.locator("#vRezept a:has-text('Original ansehen')").last();
+ok((await origLink.textContent()).includes("📄") && /\/bild\/[a-z0-9]{24}$/.test(await origLink.getAttribute("href")), "Foto-Import: „📄 Original ansehen“ mit Bild-Adresse");
+const bildRes = await W.fetch(new Request(await origLink.getAttribute("href")), env);
+ok(bildRes.status === 200 && Buffer.from(await bildRes.arrayBuffer()).equals(png), "das gespeicherte Original ist das hochgeladene Foto");
+await p.click("#zur");
+ok(await p.locator("#liste .li .icon img").count() === 1, "Vorschaubild in der Liste");
+// Text-Import danach: kein Original übrig vom vorigen Foto
+await p.click("#neuBtn"); await p.fill("#text", "Nur Text"); await p.click("#los"); await p.waitForSelector("#vEdit:not([hidden])");
+await p.fill("#eTitel", "Nur Text"); await p.click("#eSpeichern"); await p.waitForSelector("#vRezept:not([hidden]) h2");
+ok(await p.locator("#vRezept a:has-text('📄')").count() === 0, "Text-Import ohne Original");
+if(BILD) { await p.click("#zur"); await p.screenshot({ path: BILD + "/liste.png", fullPage: true }); }
+await p.goto(APP); await p.waitForSelector("#liste .li");
+for(const t of ["Croustillants", "Nur Text"]){ await p.click(`#liste .li:has-text('${t}')`); await p.click("#loesch"); await p.waitForSelector("#vListe:not([hidden])"); }
 
 // Löschen
 await p.click("#liste .li"); await p.click("#loesch"); await p.waitForSelector("#vListe:not([hidden])");
