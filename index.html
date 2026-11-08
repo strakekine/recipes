@@ -1,0 +1,502 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<!-- KEIN viewport-fit=cover — siehe CLAUDE.md, iPhone-Regeln der Pizza-App. -->
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Recipes</title>
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Recipes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#14110f">
+<link rel="apple-touch-icon" sizes="180x180" href="data:image/png;base64,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">
+<link rel="icon" href="data:image/png;base64,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">
+<style>
+:root{--bg:#14110f;--p:#1f1a17;--p2:#29221e;--l:#3a312b;--t:#f3ece6;--m:#a8998c;--a:#f08a4b;--a2:#ffb07d;--g:#f2c94c;--ok:#5fcf80;--bad:#ff6b6b}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--t);font:16px/1.45 system-ui,-apple-system,"Segoe UI",sans-serif;-webkit-font-smoothing:antialiased}
+header{position:sticky;top:0;z-index:20;background:rgba(20,17,15,.96);backdrop-filter:blur(10px);border-bottom:1px solid var(--l)}
+.wrap{max-width:680px;margin:0 auto;padding:10px 16px}
+.kopf{display:flex;align-items:center;justify-content:space-between;gap:10px}
+h1{margin:0;font-size:24px;letter-spacing:.3px}h1 span{color:var(--a)}
+.tabs{display:flex;gap:6px;margin-top:8px}
+.tabs button{flex:1;background:var(--p);color:var(--m);border:1px solid var(--l);border-radius:10px;padding:9px;font:inherit;font-weight:700;cursor:pointer}
+.tabs button.on{background:var(--a);color:#1b0f06;border-color:var(--a)}
+.tabs .zahl{display:inline-block;min-width:20px;padding:0 6px;margin-left:4px;border-radius:10px;background:rgba(0,0,0,.25);font-size:13px}
+main{max-width:680px;margin:0 auto;padding:12px 16px 100px}
+.k{background:var(--p);border:1px solid var(--l);border-radius:14px;padding:14px;margin:12px 0}
+.s{color:var(--m);font-size:14px}
+input,textarea,select,button{font:inherit;color:inherit}
+input[type=text],input[type=password],input[type=search],input[type=number],textarea{width:100%;background:var(--bg);border:1px solid var(--l);border-radius:10px;padding:10px;font-size:16px}
+textarea{min-height:90px;resize:vertical}
+button{background:var(--a);color:#1b0f06;border:0;border-radius:10px;padding:11px 14px;font-weight:700;cursor:pointer;touch-action:manipulation}
+button.g{background:transparent;color:var(--t);border:1px solid var(--l)}
+button.klein{padding:7px 11px;font-size:14px}
+button:disabled{opacity:.5}
+.r{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:10px}
+.f{color:var(--bad)}.okf{color:var(--ok)}
+a{color:var(--a2)}
+.li{display:flex;gap:12px;align-items:center;padding:12px;border:1px solid var(--l);border-radius:12px;background:var(--p);margin:8px 0;cursor:pointer}
+.li b{display:block}.li .s{font-size:13px}
+.li .icon{width:42px;height:42px;border-radius:10px;background:var(--p2);display:flex;align-items:center;justify-content:center;font-size:22px;flex:none}
+.leer{text-align:center;padding:30px 10px}
+label.file{display:block;border:2px dashed var(--l);border-radius:12px;padding:18px;text-align:center;cursor:pointer;margin-top:10px}
+h2{margin:4px 0 4px;font-size:24px;line-height:1.2}
+h3{margin:16px 0 6px;font-size:17px}
+.pz{display:flex;align-items:center;gap:12px;margin-top:12px}.pz b{font-size:22px;min-width:2ch;text-align:center}
+ul.z{list-style:none;padding:0;margin:0}
+ul.z li{padding:7px 0;border-bottom:1px solid var(--l);display:flex;gap:10px}
+ul.z li .m{min-width:76px;font-weight:700;text-align:right}
+ul.z li.offen .m{color:var(--g)}ul.z li.offen .n{color:var(--g)}
+.h{color:var(--m);font-size:13px}
+.grp{color:var(--a2);font-weight:700;margin-top:12px}
+ol.st{padding-left:22px;margin:0}ol.st li{margin:8px 0}
+.zurueck{background:none;color:var(--a2);padding:4px 0;font-weight:700}
+.toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:var(--t);color:var(--bg);padding:10px 16px;border-radius:12px;font-weight:700;z-index:50;max-width:90%;text-align:center}
+.ek{display:flex;align-items:center;gap:10px;padding:9px 2px;border-bottom:1px solid var(--l)}
+.ek input{width:22px;height:22px;flex:none;accent-color:var(--a)}
+.ek .t{flex:1}.ek.ok .t{text-decoration:line-through;color:var(--m)}
+.ek .von{display:block;font-size:12px;color:var(--m)}
+.gang{color:var(--a2);font-weight:700;font-size:14px;margin-top:14px;text-transform:uppercase;letter-spacing:.5px}
+details summary{cursor:pointer;color:var(--m)}
+.fuss{text-align:center;color:var(--m);font-size:13px;margin-top:20px}
+</style>
+</head>
+<body>
+<header><div class="wrap">
+  <div class="kopf"><h1><span>Recipes</span></h1><span class="s" id="netz"></span></div>
+  <div class="tabs"><button id="tR" class="on">Rezepte</button><button id="tE">Einkauf <span class="zahl" id="ekZahl"></span></button></div>
+</div></header>
+<main>
+  <div id="codeK" class="k" hidden>
+    <b>Familien-Code</b><div class="s">Einmal eingeben, das Handy merkt ihn sich.</div>
+    <div class="r"><input type="password" id="code" placeholder="Code" autocomplete="current-password"><button id="codeOk">OK</button></div>
+    <div id="codeS" class="s"></div>
+  </div>
+  <!-- Rezepte -->
+  <section id="vListe">
+    <div class="r" style="margin-top:0"><input type="search" id="suche" placeholder="Suchen: Rezept oder Zutat" style="flex:1"><button id="neuBtn">+ Rezept</button></div>
+    <div id="liste"></div>
+  </section>
+  <!-- Neues Rezept -->
+  <section id="vNeu" hidden>
+    <button class="zurueck" data-zurueck>‹ Zurück</button>
+    <div class="k"><b>Neues Rezept</b>
+      <label class="file">📄 🖼️ 🎬<br>PDF, Screenshots, Fotos oder Bildschirmaufnahme wählen<input type="file" id="datei" multiple accept="image/*,application/pdf,video/*" hidden></label>
+      <div id="gewaehlt" class="s" style="margin-top:6px"></div>
+      <div style="margin-top:10px"><textarea id="text" placeholder="oder Text einfügen: Beschreibung, Rezepttext oder YouTube-Link. Den Link zum Reel gern dazu, dann ist er im Rezept gespeichert."></textarea></div>
+      <div class="r"><button id="los">Rezept machen</button><button class="g" id="handBtn">Von Hand eintippen</button></div>
+      <div id="stand" class="s" style="margin-top:8px"></div>
+      <div class="s" style="margin-top:10px">Tipp für Reels: Bildschirmaufnahme (Kontrollzentrum ⏺), in Fotos auf den Rezept-Teil kürzen, hier wählen.</div>
+    </div>
+  </section>
+  <!-- Ein Rezept -->
+  <section id="vRezept" hidden></section>
+  <!-- Bearbeiten -->
+  <section id="vEdit" hidden>
+    <button class="zurueck" data-zurueck>‹ Zurück</button>
+    <div class="k">
+      <b id="editTitel">Bearbeiten</b>
+      <div style="margin-top:10px"><div class="s">Titel</div><input type="text" id="eTitel"></div>
+      <div class="r"><div style="flex:1"><div class="s">Personen</div><input type="number" inputmode="numeric" id="ePers" min="1" max="100"></div>
+        <div style="flex:1"><div class="s">Zeit (min)</div><input type="number" inputmode="numeric" id="eZeit" min="1"></div></div>
+      <div style="margin-top:10px"><div class="s">Zutaten — eine je Zeile, z. B. „200 g Mehl“, „2 Eier“, „Salz“. „## Für die Sauce“ beginnt eine Gruppe.</div><textarea id="eZut" style="min-height:200px"></textarea></div>
+      <div style="margin-top:10px"><div class="s">Schritte — einer je Zeile</div><textarea id="eSchr" style="min-height:160px"></textarea></div>
+      <div style="margin-top:10px"><div class="s">Notiz</div><textarea id="eNotiz" style="min-height:60px"></textarea></div>
+      <div style="margin-top:10px"><div class="s">Link zum Original</div><input type="text" id="eQuelle" inputmode="url"></div>
+      <div class="r"><button id="eSpeichern">Speichern</button><button class="g" data-zurueck>Abbrechen</button></div>
+      <div id="eStand" class="s"></div>
+    </div>
+  </section>
+  <!-- Einkauf -->
+  <section id="vEinkauf" hidden>
+    <div class="r" style="margin-top:0"><input type="text" id="ekNeu" placeholder="Etwas dazuschreiben, z. B. Klopapier" style="flex:1"><button id="ekAdd">+</button></div>
+    <div id="ekListe"></div>
+    <div class="r"><button id="ekBring">In Bring! übernehmen</button><button class="g klein" id="ekWeg">Erledigte weg</button><button class="g klein" id="ekLeer">Alles leeren</button></div>
+    <div id="ekStand" class="s"></div>
+    <details class="k"><summary>Hab ich immer da (kommt nicht auf die Liste)</summary>
+      <div class="s" style="margin-top:8px">Mit Komma getrennt. Diese Zutaten werden beim Übernehmen aus einem Rezept weggelassen.</div>
+      <textarea id="vorrat" style="min-height:60px;margin-top:6px"></textarea>
+      <div class="r"><button class="klein" id="vorratOk">Speichern</button></div>
+    </details>
+  </section>
+  <div class="fuss">Fassung <span id="fassung"></span></div>
+</main>
+<script>
+/* ==== Logik ==== (kein DOM; test/rezepte.mjs schneidet diesen Block aus) */
+const WORKER = "https://recipes.rjtp6r9s9h.workers.dev";
+const FASSUNG = "08.11.2026 b";
+const GAENGE = ["Obst & Gemüse", "Brot & Backwaren", "Kühlregal", "Fleisch & Fisch", "Tiefkühl",
+  "Nudeln, Reis & Trockenes", "Konserven & Gläser", "Gewürze, Öl & Saucen", "Backzutaten", "Getränke", "Sonstiges"];
+const EINHEITEN = ["g", "kg", "ml", "l", "EL", "TL", "Prise", "Msp", "Stück", "Dose", "Bund", "Zehe", "Becher", "Pck", "Scheibe", "Handvoll"];
+/* Schreibweisen beim Eintippen → Einheit */
+const EINHEIT_WORTE = { g:"g", gr:"g", gramm:"g", kg:"kg", ml:"ml", l:"l", liter:"l", el:"EL", essl:"EL", "essl.":"EL", essloffel:"EL", "esslöffel":"EL",
+  tl:"TL", teel:"TL", "teel.":"TL", "teelöffel":"TL", prise:"Prise", prisen:"Prise", msp:"Msp", "msp.":"Msp", stück:"Stück", stk:"Stück", "stk.":"Stück",
+  dose:"Dose", dosen:"Dose", bund:"Bund", zehe:"Zehe", zehen:"Zehe", becher:"Becher", pck:"Pck", "pck.":"Pck", packung:"Pck", päckchen:"Pck",
+  scheibe:"Scheibe", scheiben:"Scheibe", handvoll:"Handvoll" };
+const STANDARD_VORRAT = "Salz, Pfeffer, Öl, Olivenöl, Wasser, Zucker";
+const BRUCH = { "½": .5, "¼": .25, "¾": .75, "⅓": 1/3, "⅔": 2/3 };
+
+const zahlLesen = s => {
+  s = String(s).trim();
+  if(BRUCH[s] != null) return BRUCH[s];
+  let m = s.match(/^(\d+)\s*([½¼¾⅓⅔])$/); if(m) return +m[1] + BRUCH[m[2]];
+  m = s.match(/^(\d+)\s*\/\s*(\d+)$/); if(m && +m[2]) return +m[1] / +m[2];
+  m = s.match(/^(\d+)\s+(\d+)\s*\/\s*(\d+)$/); if(m && +m[3]) return +m[1] + +m[2] / +m[3];
+  const x = Number(s.replace(",", ".")); return isFinite(x) && x > 0 ? x : null;
+};
+
+/* Eine Zutatenzeile wie „200 g Mehl (fein)“, „2–3 Zehen Knoblauch“, „Salz“ */
+function zeileLesen(zeile){
+  let t = String(zeile).trim().replace(/^[-•*]\s*/, "");
+  if(!t) return null;
+  let hinweis = "";
+  const k = t.match(/\(([^)]*)\)\s*$/); if(k){ hinweis = k[1].trim(); t = t.slice(0, k.index).trim(); }
+  const Z = "(\\d+\\s+\\d+\\s*\\/\\s*\\d+|\\d+(?:[.,]\\d+)?(?:\\s*\\/\\s*\\d+)?(?:\\s*[½¼¾⅓⅔])?|[½¼¾⅓⅔])";
+  const m = t.match(new RegExp("^" + Z + "(?:\\s*[-–]\\s*" + Z + ")?\\s*(.*)$"));
+  let menge = null, bis = null, rest = t;
+  if(m && /\d|[½¼¾⅓⅔]/.test(m[1])){ menge = zahlLesen(m[1]); bis = m[2] ? zahlLesen(m[2]) : null; rest = m[3]; }
+  let einheit = "";
+  const w = rest.match(/^(\S+)\s+(.+)$/);
+  if(menge != null && w && EINHEIT_WORTE[w[1].toLowerCase()]){ einheit = EINHEIT_WORTE[w[1].toLowerCase()]; rest = w[2]; }
+  rest = rest.trim();
+  if(!rest) return null;
+  const z = { menge, einheit, name: rest };
+  if(bis != null && menge != null && bis > menge) z.menge_bis = bis;
+  if(hinweis) z.hinweis = hinweis;
+  return z;
+}
+
+const STUECKIG = ["Stück","EL","TL","Zehe","Dose","Bund","Becher","Pck","Scheibe","Handvoll",""];
+function zahlText(x, e){
+  if(x == null) return "";
+  if((e === "g" || e === "ml") && x >= 100) x = Math.round(x / 5) * 5;
+  else if(STUECKIG.includes(e)){
+    x = Math.round(x * 2) / 2 || 0.5;
+    const ganz = Math.floor(x);
+    if(x - ganz === .5) return ganz ? ganz + " ½" : "½";
+  }
+  else x = Math.round(x * 10) / 10;
+  return String(x).replace(".", ",");
+}
+/* Menge für f-fache Portionen; Prise/Msp bleiben, wie sie sind (eine Prise skaliert man nicht). */
+function mengeText(z, f = 1){
+  if(z.menge == null) return "";
+  let e = z.einheit || "", a = z.menge, b = z.menge_bis ?? null;
+  if(e !== "Prise" && e !== "Msp"){ a *= f; if(b != null) b *= f; }
+  if(e === "g" && a >= 1000){ a /= 1000; b = b != null ? b / 1000 : null; e = "kg"; }
+  if(e === "ml" && a >= 1000){ a /= 1000; b = b != null ? b / 1000 : null; e = "l"; }
+  return zahlText(a, e) + (b != null ? "–" + zahlText(b, e) : "") + (e ? " " + e : "");
+}
+function zeileAus(z){
+  return [mengeText(z).trim(), z.name].filter(Boolean).join(" ") + (z.hinweis ? " (" + z.hinweis + ")" : "");
+}
+
+/* Zutaten als Text zum Bearbeiten und zurück. Gruppen als „## Name“. */
+function zutatenText(zutaten){
+  let g = "", out = [];
+  for(const z of zutaten || []){
+    if((z.gruppe || "") !== g){ g = z.gruppe || ""; if(g) out.push("## " + g); }
+    out.push(zeileAus(z));
+  }
+  return out.join("\n");
+}
+function zutatenLesen(text, alt = []){
+  const altNach = new Map(alt.map(z => [z.name.toLowerCase(), z]));
+  let gruppe = "", out = [];
+  for(const zl of String(text).split("\n")){
+    const t = zl.trim(); if(!t) continue;
+    const gm = t.match(/^#+\s*(.*)$/); if(gm){ gruppe = gm[1].replace(/:$/, "").trim(); continue; }
+    const z = zeileLesen(t); if(!z) continue;
+    if(gruppe) z.gruppe = gruppe;
+    z.gang = altNach.get(z.name.toLowerCase())?.gang || gangRaten(z.name);
+    out.push(z);
+  }
+  return out;
+}
+
+/* Nur für von Hand eingetippte Zutaten; die KI liefert den Gang selbst. */
+const GANG_WORTE = [
+  ["Obst & Gemüse", /tomate|zwiebel|knoblauch|salat|rucola|gurke|paprika|möhre|karotte|kartoffel|zucchini|aubergine|pilz|champignon|apfel|banane|zitrone|limette|kräuter|basilikum|petersilie|schnittlauch|koriander|ingwer|spinat|lauch|sellerie|avocado|beere|obst|gemüse|chili/i],
+  ["Brot & Backwaren", /brot|brötchen|croissant|toast|baguette|wrap|tortilla|pita/i],
+  ["Kühlregal", /milch|sahne|butter|käse|mozzarella|burrata|parmesan|joghurt|quark|ei\b|eier|schmand|frischkäse|feta|ricotta|mascarpone|gnocchi/i],
+  ["Fleisch & Fisch", /fleisch|hähnchen|huhn|rind|schwein|hack|speck|schinken|wurst|lachs|fisch|thunfisch|garnele|salami/i],
+  ["Tiefkühl", /tiefkühl|tk-|erbsen/i],
+  ["Nudeln, Reis & Trockenes", /nudel|pasta|spaghetti|reis|linsen|couscous|quinoa|haferflocken|bulgur/i],
+  ["Konserven & Gläser", /dose|passiert|tomatenmark|kichererbsen|bohnen|mais|oliven|kapern|pesto/i],
+  ["Gewürze, Öl & Saucen", /salz|pfeffer|öl|essig|balsamico|senf|ketchup|sojasauce|gewürz|paprikapulver|curry|zimt|oregano|thymian|brühe|honig/i],
+  ["Backzutaten", /mehl|zucker|hefe|backpulver|natron|vanille|kakao|schokolade|stärke/i],
+  ["Getränke", /wein|bier|saft|wasser/i],
+];
+function gangRaten(name){ for(const [g, re] of GANG_WORTE) if(re.test(name)) return g; return "Sonstiges"; }
+
+/* ---- Einkaufsliste ---- */
+const basisEinheit = e => e === "kg" ? ["g", 1000] : e === "l" ? ["ml", 1000] : [e || "", 1];
+const schluessel = s => String(s).toLowerCase().replace(/\s+/g, " ").trim();
+function vorratListe(text){ return String(text || "").split(/[,\n]/).map(schluessel).filter(Boolean); }
+function istVorrat(name, vorrat){
+  const n = schluessel(name);
+  return vorrat.some(v => n === v || n === v + "n" || n.split(" ").includes(v));
+}
+/* Fügt die Zutaten eines Rezepts (für faktor-fache Menge) zur Liste hinzu. Gleiche Zutat mit
+   gleicher Einheitenfamilie (g/kg, ml/l, sonst gleiche Einheit) wird zusammengezählt. */
+function einkaufDazu(liste, zutaten, faktor, titel, vorrat = []){
+  liste = liste.map(x => ({ ...x, von: [...x.von] }));
+  let weg = [];
+  for(const z of zutaten){
+    if(istVorrat(z.name, vorrat)){ weg.push(z.name); continue; }
+    const [e, mal] = basisEinheit(z.einheit);
+    const fix = z.einheit === "Prise" || z.einheit === "Msp";
+    const m = z.menge == null ? null : z.menge * mal * (fix ? 1 : faktor);
+    const k = schluessel(z.name) + "|" + e;
+    let x = liste.find(y => y.k === k && !y.ok);
+    if(!x){ x = { k, n: z.name, e, m: null, gang: z.gang || gangRaten(z.name), ok: false, von: [], offen: false }; liste.push(x); }
+    if(m != null) x.m = (x.m || 0) + m; else x.offen = true;
+    if(titel && !x.von.includes(titel)) x.von.push(titel);
+  }
+  return { liste, weg };
+}
+function einkaufText(x){
+  const z = { menge: x.m, einheit: x.e, name: x.n };
+  return [mengeText(z), x.n].filter(Boolean).join(" ") + (x.offen && x.m != null ? " (+ etwas)" : "");
+}
+function nachGang(liste){
+  const g = new Map(GAENGE.map(n => [n, []]));
+  for(const x of liste) (g.get(x.gang) || g.get("Sonstiges")).push(x);
+  return [...g].filter(([, a]) => a.length);
+}
+function sucheTrifft(r, q){
+  q = schluessel(q); if(!q) return true;
+  const heu = schluessel(r.titel + " " + (r.zutaten || []).map(z => z.name).join(" "));
+  return q.split(" ").every(w => heu.includes(w));
+}
+/* ==== Oberfläche ==== */
+const $ = id => document.getElementById(id);
+const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({ "&":"&amp;", "<":"&lt;", ">":"&gt;", '"':"&quot;", "'":"&#39;" }[c]));
+const lies = (k, d) => { try { const v = localStorage.getItem(k); return v == null ? d : JSON.parse(v); } catch { return d; } };
+const schreib = (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); } catch {} };
+const warte = ms => new Promise(r => setTimeout(r, ms));
+$("fassung").textContent = FASSUNG;
+
+let CODE = lies("recipes_code", "");
+let REZEPTE = lies("recipes_rezepte", []);
+let EINKAUF = lies("recipes_einkauf", []);
+let VORRAT = lies("recipes_vorrat", STANDARD_VORRAT);
+let ANSICHT = "liste", OFFEN = null, PERS = 2, EDIT = null;
+
+function toast(t){ const d = document.createElement("div"); d.className = "toast"; d.textContent = t; document.body.appendChild(d); setTimeout(() => d.remove(), 2200); }
+
+async function api(pfad, opt = {}){
+  const r = await fetch(WORKER + pfad, { ...opt, headers: { "x-code": CODE, ...(opt.headers || {}) } });
+  const roh = await r.text().catch(e => "[Lesefehler: " + e.message + "]");
+  let d; try { d = JSON.parse(roh.trim()); }
+  catch { d = { fehler: "Antwort nicht lesbar (" + r.status + ", " + pfad.split("?")[0] + "): " + (roh.trim().slice(0, 120) || "leer") }; }
+  if(r.status === 401){ $("codeK").hidden = false; }
+  if(d.fehler || (!r.ok && r.status !== 202)) throw new Error(d.fehler || ("Fehler " + r.status));
+  return { status: r.status, d };
+}
+
+/* ---- Ansichten ---- */
+function zeige(a){
+  ANSICHT = a;
+  $("vListe").hidden = a !== "liste"; $("vNeu").hidden = a !== "neu"; $("vRezept").hidden = a !== "rezept";
+  $("vEdit").hidden = a !== "edit"; $("vEinkauf").hidden = a !== "einkauf";
+  $("tR").classList.toggle("on", a !== "einkauf"); $("tE").classList.toggle("on", a === "einkauf");
+  if(a === "liste") liste();
+  if(a === "rezept") rezeptZeigen();
+  if(a === "einkauf") einkauf();
+  window.scrollTo(0, 0);
+}
+$("tR").onclick = () => zeige("liste");
+$("tE").onclick = () => zeige("einkauf");
+document.querySelectorAll("[data-zurueck]").forEach(b => b.onclick = () => {
+  const zumRezept = ANSICHT === "edit" && EDIT?.id && OFFEN?.id === EDIT.id;
+  if(ANSICHT === "edit" && !EDIT?.id && EDIT?.zutaten?.length && !confirm("Das Rezept ist noch nicht gespeichert. Trotzdem verwerfen?")) return;
+  EDIT = null; zeige(zumRezept ? "rezept" : "liste");
+});
+
+/* ---- Liste ---- */
+function liste(){
+  const q = $("suche").value;
+  const treffer = REZEPTE.filter(r => sucheTrifft(r, q));
+  $("liste").innerHTML = !REZEPTE.length
+    ? '<div class="leer s">Noch keine Rezepte.<br>Tipp auf <b>+ Rezept</b>: PDF, Screenshot oder Video eines Reels wählen.</div>'
+    : !treffer.length ? '<div class="leer s">Nichts gefunden.</div>'
+    : treffer.map(r => `<div class="li" data-id="${esc(r.id)}"><div class="icon">${r.quelle && /facebook|instagram|tiktok|youtu/i.test(r.quelle) ? "🎬" : "🍽️"}</div>
+      <div><b>${esc(r.titel)}</b><span class="s">${r.zutaten.length} Zutaten${r.zeit_min ? " · " + r.zeit_min + " min" : ""}${r.portionen ? " · für " + r.portionen : ""}</span></div></div>`).join("");
+  $("liste").querySelectorAll(".li").forEach(el => el.onclick = () => { OFFEN = REZEPTE.find(r => r.id === el.dataset.id); PERS = OFFEN.portionen || 2; zeige("rezept"); });
+}
+$("suche").oninput = liste;
+async function laden(){
+  try {
+    const { d } = await api("/api/rezepte");
+    REZEPTE = d.rezepte; schreib("recipes_rezepte", REZEPTE); $("netz").textContent = "";
+  } catch(e){ $("netz").textContent = navigator.onLine ? "" : "offline"; if(!/Code/.test(e.message)) console.warn(e); }
+  if(ANSICHT === "liste") liste();
+}
+
+/* ---- Ein Rezept ---- */
+function rezeptZeigen(){
+  const r = OFFEN; if(!r){ zeige("liste"); return; }
+  const f = PERS / (r.portionen || PERS || 1);
+  let g = null, h = "";
+  for(const z of r.zutaten){
+    if((z.gruppe || "") !== g){ g = z.gruppe || ""; if(g) h += `</ul><div class="grp">${esc(g)}</div><ul class="z">`; }
+    const m = mengeText(z, f);
+    h += `<li class="${m ? "" : "offen"}"><span class="m">${esc(m) || "?"}</span><span class="n">${esc(z.name)}${z.hinweis ? ` <span class="h">(${esc(z.hinweis)})</span>` : ""}</span></li>`;
+  }
+  $("vRezept").innerHTML = `<button class="zurueck" id="zur">‹ Rezepte</button>
+    <h2>${esc(r.titel)}</h2>
+    <div class="s">${r.zeit_min ? "⏱ " + r.zeit_min + " min · " : ""}${r.quelle ? `<a href="${esc(r.quelle)}" target="_blank" rel="noopener">▶ Original ansehen</a>` : ""}</div>
+    <div class="pz">Personen <button class="g" id="pm">−</button><b>${PERS}</b><button class="g" id="pp">+</button>
+      ${r.portionen ? `<span class="s">(Rezept: ${r.portionen})</span>` : ""}</div>
+    <div class="r"><button id="aufListe">🛒 Auf die Einkaufsliste</button><button class="g" id="direktBring">Direkt in Bring!</button></div>
+    <h3>Zutaten</h3><ul class="z">${h}</ul>
+    ${r.zutaten.some(z => z.menge == null) ? '<div class="s" style="margin-top:6px">Gelb mit „?“: Menge im Original nicht genannt.</div>' : ""}
+    <h3>Zubereitung</h3><ol class="st">${r.schritte.map(s => "<li>" + esc(s) + "</li>").join("")}</ol>
+    ${r.notiz ? `<div class="k s">📝 ${esc(r.notiz)}</div>` : ""}
+    <div class="r"><button class="g klein" id="bearb">✎ Bearbeiten</button><button class="g klein" id="loesch">Löschen</button></div>
+    <div id="rStand" class="s"></div>`;
+  $("zur").onclick = () => zeige("liste");
+  $("pm").onclick = () => { if(PERS > 1){ PERS--; rezeptZeigen(); } };
+  $("pp").onclick = () => { if(PERS < 100){ PERS++; rezeptZeigen(); } };
+  $("aufListe").onclick = () => {
+    const { liste: l, weg } = einkaufDazu(EINKAUF, r.zutaten, f, r.titel, vorratListe(VORRAT));
+    EINKAUF = l; schreib("recipes_einkauf", EINKAUF); ekZahl();
+    toast("Auf der Liste" + (weg.length ? " (ohne " + weg.join(", ") + ")" : ""));
+  };
+  $("direktBring").onclick = () => bring(r.titel, r.zutaten.filter(z => !istVorrat(z.name, vorratListe(VORRAT))).map(z => [mengeText(z, f), z.name].filter(Boolean).join(" ")), "rStand");
+  $("bearb").onclick = () => bearbeiten(r);
+  $("loesch").onclick = async () => {
+    if(!confirm("„" + r.titel + "“ wirklich löschen?")) return;
+    try { await api("/api/rezepte/" + encodeURIComponent(r.id), { method: "DELETE" }); REZEPTE = REZEPTE.filter(x => x.id !== r.id); schreib("recipes_rezepte", REZEPTE); OFFEN = null; zeige("liste"); toast("Gelöscht"); }
+    catch(e){ $("rStand").innerHTML = '<span class="f">' + esc(e.message) + "</span>"; }
+  };
+}
+
+/* ---- Bearbeiten / neu von Hand ---- */
+function bearbeiten(r){
+  EDIT = r || { titel: "", portionen: 2, zutaten: [], schritte: [], notiz: "", quelle: "" };
+  $("editTitel").textContent = EDIT.id ? "Bearbeiten" : (r ? "Vorschau prüfen und speichern" : "Neues Rezept von Hand");
+  $("eTitel").value = EDIT.titel || ""; $("ePers").value = EDIT.portionen || ""; $("eZeit").value = EDIT.zeit_min || "";
+  $("eZut").value = zutatenText(EDIT.zutaten); $("eSchr").value = (EDIT.schritte || []).join("\n");
+  $("eNotiz").value = EDIT.notiz || ""; $("eQuelle").value = EDIT.quelle || ""; $("eStand").textContent = "";
+  zeige("edit");
+}
+$("handBtn").onclick = () => bearbeiten(null);
+$("eSpeichern").onclick = async () => {
+  const r = { ...EDIT,
+    titel: $("eTitel").value.trim(), portionen: Number($("ePers").value) || null, zeit_min: Number($("eZeit").value) || null,
+    zutaten: zutatenLesen($("eZut").value, EDIT.zutaten || []),
+    schritte: $("eSchr").value.split("\n").map(s => s.replace(/^\s*\d+[.)]\s*/, "").trim()).filter(Boolean),
+    notiz: $("eNotiz").value.trim(), quelle: $("eQuelle").value.trim() };
+  if(!r.titel){ $("eStand").innerHTML = '<span class="f">Bitte einen Titel eingeben.</span>'; return; }
+  const id = r.id || ("r" + Date.now().toString(36) + Math.random().toString(36).slice(2, 6));
+  $("eSpeichern").disabled = true; $("eStand").textContent = "Speichere …";
+  try {
+    const { d } = await api("/api/rezepte/" + id, { method: "PUT", headers: { "content-type": "application/json" }, body: JSON.stringify(r) });
+    REZEPTE = [d.rezept, ...REZEPTE.filter(x => x.id !== id)]; schreib("recipes_rezepte", REZEPTE);
+    OFFEN = d.rezept; PERS = d.rezept.portionen || 2; EDIT = null; zeige("rezept"); toast("Gespeichert ✓");
+  } catch(e){ $("eStand").innerHTML = '<span class="f">' + esc(e.message) + "</span>"; }
+  $("eSpeichern").disabled = false;
+};
+
+/* ---- Neu per KI ---- */
+$("neuBtn").onclick = () => { $("stand").textContent = ""; zeige("neu"); };
+$("datei").onchange = () => { const f = [...$("datei").files]; $("gewaehlt").textContent = f.map(x => x.name + " (" + (x.size / 1048576).toFixed(1) + " MB)").join(", "); };
+async function hoch(f){
+  const typ = f.type || "application/octet-stream";
+  try {
+    const { d } = await api("/api/datei-start?name=" + encodeURIComponent(f.name) + "&groesse=" + f.size + "&typ=" + encodeURIComponent(typ), { method: "POST" });
+    const r = await fetch(d.url, { method: "POST", headers: { "X-Goog-Upload-Command": "upload, finalize", "X-Goog-Upload-Offset": "0" }, body: f });
+    const j = await r.json().catch(() => null);
+    if(!r.ok || !j?.file?.uri) throw new Error("Google: " + r.status);
+    return { name: j.file.name, uri: j.file.uri, mime: j.file.mimeType || typ };
+  } catch(e){
+    if(f.size > 95 * 1048576) throw new Error("Hochladen: " + e.message);
+    const { d } = await api("/api/datei?name=" + encodeURIComponent(f.name), { method: "POST", headers: { "content-type": typ }, body: f });
+    return d.datei;
+  }
+}
+const abriss = m => /nicht lesbar|Load failed|network|Netzwerk|fetch/i.test(m);
+$("los").onclick = async () => {
+  const files = [...$("datei").files], text = $("text").value.trim();
+  if(!files.length && !text){ $("stand").textContent = "Erst eine Datei wählen oder Text einfügen."; return; }
+  $("los").disabled = true; const dateien = []; let uhr;
+  try {
+    for(const [i, f] of files.entries()){ $("stand").textContent = "Lade hoch " + (i + 1) + "/" + files.length + " (" + (f.size / 1048576).toFixed(0) + " MB) …"; dateien.push(await hoch(f)); }
+    const t0 = Date.now(), auftrag = "a" + Date.now().toString(36) + Math.random().toString(36).slice(2, 8); let TXT = "KI liest das Rezept";
+    uhr = setInterval(() => { $("stand").textContent = TXT + " … " + Math.round((Date.now() - t0) / 1000) + " s"; }, 1000);
+    for(;;){
+      let status, d;
+      try { ({ status, d } = await api("/api/rezept", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ dateien, text, auftrag }) })); }
+      catch(e){
+        if(!abriss(e.message)) throw e;
+        TXT = "Verbindung kurz weg, hole das Ergebnis";
+        for(;;){
+          if(Date.now() - t0 > 360000) throw new Error("Kein Ergebnis nach 6 Minuten. Bitte nochmal versuchen.");
+          await warte(5000);
+          try { ({ status, d } = await api("/api/ergebnis/" + auftrag)); } catch(e2){ if(!abriss(e2.message)) throw e2; continue; }
+          if(status !== 202) break;
+        }
+      }
+      if(status === 202 || d.warten){ if(Date.now() - t0 > 300000) throw new Error("Gemini braucht zu lange für das Video."); TXT = "Gemini bereitet das Video vor"; await warte(3000); TXT = "KI liest das Rezept"; continue; }
+      clearInterval(uhr);
+      if(!d.rezept?.titel) throw new Error("Kein Rezept erkannt." + (d.rezept?.notiz ? " " + d.rezept.notiz : ""));
+      $("stand").textContent = ""; $("datei").value = ""; $("gewaehlt").textContent = ""; $("text").value = "";
+      bearbeiten({ ...d.rezept, id: undefined });   // erst prüfen, dann speichern
+      break;
+    }
+  } catch(e){ $("stand").innerHTML = '<span class="f">' + esc(e.message) + "</span>"; }
+  clearInterval(uhr); $("los").disabled = false;
+};
+
+/* ---- Einkauf ---- */
+function ekZahl(){ const n = EINKAUF.filter(x => !x.ok).length; $("ekZahl").textContent = n || ""; }
+function einkauf(){
+  ekZahl();
+  if(!EINKAUF.length){ $("ekListe").innerHTML = '<div class="leer s">Die Liste ist leer.<br>Im Rezept auf <b>🛒 Auf die Einkaufsliste</b> tippen.</div>'; }
+  else $("ekListe").innerHTML = nachGang(EINKAUF).map(([g, a]) => `<div class="gang">${esc(g)}</div>` + a.map(x =>
+    `<label class="ek ${x.ok ? "ok" : ""}"><input type="checkbox" data-k="${esc(x.k)}" ${x.ok ? "checked" : ""}><span class="t">${esc(einkaufText(x))}${x.von.length ? `<span class="von">${esc(x.von.join(", "))}</span>` : ""}</span></label>`).join("")).join("");
+  $("ekListe").querySelectorAll("input").forEach(c => c.onchange = () => {
+    const x = EINKAUF.find(y => y.k === c.dataset.k && y.ok !== c.checked) || EINKAUF.find(y => y.k === c.dataset.k);
+    x.ok = c.checked; schreib("recipes_einkauf", EINKAUF); einkauf();
+  });
+  if(document.activeElement !== $("vorrat")) $("vorrat").value = VORRAT;
+}
+$("ekAdd").onclick = () => {
+  const t = $("ekNeu").value.trim(); if(!t) return;
+  const z = zeileLesen(t) || { menge: null, einheit: "", name: t };
+  z.gang = gangRaten(z.name);
+  EINKAUF = einkaufDazu(EINKAUF, [z], 1, "").liste; schreib("recipes_einkauf", EINKAUF); $("ekNeu").value = ""; einkauf();
+};
+$("ekNeu").onkeydown = e => { if(e.key === "Enter") $("ekAdd").click(); };
+$("ekWeg").onclick = () => { EINKAUF = EINKAUF.filter(x => !x.ok); schreib("recipes_einkauf", EINKAUF); einkauf(); };
+$("ekLeer").onclick = () => { if(EINKAUF.length && confirm("Ganze Liste leeren?")){ EINKAUF = []; schreib("recipes_einkauf", EINKAUF); einkauf(); } };
+$("vorratOk").onclick = () => { VORRAT = $("vorrat").value; schreib("recipes_vorrat", VORRAT); toast("Gespeichert"); };
+$("ekBring").onclick = () => {
+  const offen = EINKAUF.filter(x => !x.ok);
+  if(!offen.length){ $("ekStand").textContent = "Nichts offen auf der Liste."; return; }
+  bring("Einkauf", offen.map(einkaufText), "ekStand");
+};
+async function bring(titel, zeilen, standId){
+  $(standId).textContent = "Bereite Bring! vor …";
+  try { const { d } = await api("/api/bring", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ titel, zeilen }) });
+    $(standId).textContent = ""; location.href = d.link; }
+  catch(e){ $(standId).innerHTML = '<span class="f">' + esc(e.message) + "</span>"; }
+}
+
+/* ---- Code ---- */
+$("codeOk").onclick = async () => {
+  CODE = $("code").value.trim(); schreib("recipes_code", CODE);
+  try { await api("/api/pruefen"); $("codeK").hidden = true; laden(); }
+  catch(e){ $("codeS").innerHTML = '<span class="f">' + esc(e.message) + "</span>"; }
+};
+if(!CODE) $("codeK").hidden = false;
+zeige("liste"); ekZahl();
+if(CODE) laden();
+document.addEventListener("visibilitychange", () => { if(!document.hidden && CODE && ANSICHT === "liste") laden(); });
+</script>
+</body>
+</html>
