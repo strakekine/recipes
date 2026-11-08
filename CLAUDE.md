@@ -156,3 +156,9 @@ ein Foto-Original gespeichert. Rezept-Ansicht: „🖼️ Bild aus dem Video“,
 Bildschirmaufnahmen ist die Oberfläche von Instagram/Facebook mit drauf; ob iOS das Standbild ohne Abspielen herausgibt,
 ist **am iPhone noch nicht geprüft** (Chromium: geprüft mit selbst aufgenommenem Testvideo, schwarz → orange, Gegenprobe
 ohne Schwarz-Erkennung schlägt an). Klappt es nicht, gibt es eben kein Bild.
+**Nachtrag Fassung k (App):** Am iPhone kam mit Fassung j **kein** Standbild (vom Nutzer gemeldet, Grund unbekannt). Vermutung:
+Safari lädt/spielt das Video nicht, weil es erst 20–40 s nach dem Tippen angelegt wurde. Jetzt `videoVorbereiten()` sofort im
+Klick auf „Rezept machen“ (vor dem ersten `await`): `<video>` stumm, `playsinline`, unsichtbar in der Seite, `load()` +
+`play()`; `standbild(vor, sekunde)` springt später nur hin und räumt das Element weg. Die Vorschau sagt jetzt, ob das Bild
+mitgespeichert wird oder **warum nicht** („Video lädt nicht“, „Springen klappt nicht“, „nur schwarze Bilder, Anspielen
+gesperrt“ …) — beim nächsten Fehlschlag am iPhone diesen Text erfragen.

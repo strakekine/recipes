@@ -153,7 +153,7 @@ details summary{cursor:pointer;color:var(--m)}
 <script>
 /* ==== Logik ==== (kein DOM; test/rezepte.mjs schneidet diesen Block aus) */
 const WORKER = "https://recipes.rjtp6r9s9h.workers.dev";
-const FASSUNG = "08.11.2026 j";
+const FASSUNG = "08.11.2026 k";
 const GAENGE = ["Obst & Gemüse", "Brot & Backwaren", "Kühlregal", "Fleisch & Fisch", "Tiefkühl",
   "Nudeln, Reis & Trockenes", "Konserven & Gläser", "Gewürze, Öl & Saucen", "Backzutaten", "Getränke", "Sonstiges"];
 const EINHEITEN = ["g", "kg", "ml", "l", "EL", "TL", "Prise", "Msp", "Stück", "Dose", "Bund", "Zehe", "Becher", "Pck", "Scheibe", "Handvoll"];
@@ -551,32 +551,43 @@ async function verkleinern(f){
   } catch { return f; }
 }
 /* Standbild aus dem Video (vom Nutzer gewünscht): Gemini nennt die Sekunde mit dem fertigen Gericht
-   (bild_sekunde), sonst 80 % der Länge. Das Handy hat die Datei noch; ein unsichtbares <video> springt hin,
-   ein <canvas> macht das Bild. iOS liefert manchmal ein schwarzes Bild, solange nichts abgespielt wurde —
-   darum kurz stumm anspielen und schwarze Bilder verwerfen. Klappt es nicht: kein Bild, sonst nichts. */
-async function standbild(datei, sekunde){
+   (bild_sekunde), sonst 80 % bzw. 50 % der Länge.
+   iPhone: Safari lädt und spielt ein Video nur an, wenn das direkt beim Tippen geschieht. Die erste Fassung (j) legte
+   das <video> erst an, als nach 20–40 s das Rezept kam — am iPhone kam kein Bild. Darum legt videoVorbereiten() das
+   Element sofort beim Tippen auf „Rezept machen“ an (vor dem ersten await), hängt es unsichtbar in die Seite und
+   spielt es stumm an; standbild() springt später nur noch hin. Gibt es kein Bild, steht der Grund in der Vorschau. */
+function videoVorbereiten(datei){
   const url = URL.createObjectURL(datei);
   const v = document.createElement("video");
-  v.muted = true; v.playsInline = true; v.setAttribute("playsinline", ""); v.preload = "auto"; v.src = url;
-  const warten = (ev, ms) => new Promise((ok, nein) => { const t = setTimeout(() => nein(new Error("Zeit")), ms); v.addEventListener(ev, () => { clearTimeout(t); ok(); }, { once: true }); });
+  v.muted = true; v.defaultMuted = true; v.playsInline = true; v.setAttribute("playsinline", ""); v.setAttribute("muted", "");
+  v.preload = "auto"; v.style.cssText = "position:fixed;left:0;top:0;width:2px;height:2px;opacity:0;pointer-events:none";
+  v.src = url; document.body.appendChild(v); v.load();
+  const gespielt = v.play().then(() => { v.pause(); return true; }, () => false);
+  return { v, url, gespielt, weg(){ v.pause(); v.removeAttribute("src"); v.load(); v.remove(); URL.revokeObjectURL(url); } };
+}
+async function standbild(vor, sekunde){
+  const v = vor.v;
+  const warten = (ev, ms) => new Promise(ok => { const t = setTimeout(() => ok(false), ms); v.addEventListener(ev, () => { clearTimeout(t); ok(true); }, { once: true }); });
   try {
-    if(v.readyState < 2) await warten("loadeddata", 10000);
-    try { await v.play(); v.pause(); } catch {}
+    if(v.readyState < 1 && !(await warten("loadedmetadata", 10000))) return { grund: "Video lädt nicht (Safari)" };
+    const lief = await vor.gespielt; v.pause();
     const lang = isFinite(v.duration) ? v.duration : 0;
     const t = sekunde != null && sekunde >= 0 && (!lang || sekunde < lang) ? sekunde : lang * 0.8;
+    let grund = "nur schwarze Bilder" + (lief ? "" : ", Anspielen gesperrt");
     for(const versuch of [t, lang * 0.8, lang * 0.5]){
-      if(Math.abs(v.currentTime - versuch) > 0.05){ const s = warten("seeked", 8000); v.currentTime = versuch; await s; }
+      if(Math.abs(v.currentTime - versuch) > 0.05){ const s = warten("seeked", 8000); v.currentTime = versuch; if(!(await s)){ grund = "Springen im Video klappt nicht"; continue; } }
+      if(v.readyState < 2) await warten("canplay", 3000);
+      if(!v.videoWidth){ grund = "Video hat kein Bild geliefert"; continue; }
       const sc = Math.min(1, 1280 / Math.max(v.videoWidth, v.videoHeight));
       const c = document.createElement("canvas"); c.width = Math.round(v.videoWidth * sc); c.height = Math.round(v.videoHeight * sc);
-      if(!c.width) return null;
       const g = c.getContext("2d"); g.drawImage(v, 0, 0, c.width, c.height);
       if(istSchwarz(g, c.width, c.height)) continue;
       const b = await new Promise(r => c.toBlob(r, "image/jpeg", 0.82));
-      return b ? new File([b], "standbild.jpg", { type: "image/jpeg" }) : null;
+      return b ? { datei: new File([b], "standbild.jpg", { type: "image/jpeg" }) } : { grund: "Bild ließ sich nicht speichern" };
     }
-    return null;
-  } catch { return null; }
-  finally { v.removeAttribute("src"); v.load(); URL.revokeObjectURL(url); }
+    return { grund };
+  } catch(e){ return { grund: String(e?.message || e).slice(0, 80) }; }
+  finally { vor.weg(); }
 }
 function istSchwarz(g, w, h){
   const d = g.getImageData(0, 0, w, h).data; let hell = 0, n = 0;
@@ -601,15 +612,17 @@ const abriss = m => /nicht lesbar|Load failed|network|Netzwerk|fetch/i.test(m);
 $("los").onclick = async () => {
   const files = [...$("datei").files], text = $("text").value.trim();
   if(!files.length && !text){ $("stand").textContent = "Erst eine Datei wählen oder Text einfügen."; return; }
-  $("los").disabled = true; const dateien = []; let uhr;
+  /* sofort, noch im Tippen (vor dem ersten await) — siehe videoVorbereiten */
+  const erstesVideo = files.find(f => /^video\//.test(f.type));
+  const VOR = erstesVideo ? videoVorbereiten(erstesVideo) : null;
+  $("los").disabled = true; const dateien = []; let uhr, standGrund = "";
   try {
-    NEU_ORIG = []; let VIDEO = null;
+    NEU_ORIG = [];
     for(const [i, f0] of files.entries()){
       $("stand").textContent = "Lade hoch " + (i + 1) + "/" + files.length + " (" + (f0.size / 1048576).toFixed(0) + " MB) …";
       const f = await verkleinern(f0);
       dateien.push(await hoch(f));
-      if(/^video\//.test(f.type)){ if(!VIDEO) VIDEO = f; }
-      else if(NEU_ORIG.length < 5) NEU_ORIG.push(f);
+      if(!/^video\//.test(f.type) && NEU_ORIG.length < 5) NEU_ORIG.push(f);
     }
     const t0 = Date.now(), auftrag = "a" + Date.now().toString(36) + Math.random().toString(36).slice(2, 8); let TXT = "KI liest das Rezept";
     uhr = setInterval(() => { $("stand").textContent = TXT + " … " + Math.round((Date.now() - t0) / 1000) + " s"; }, 1000);
@@ -630,16 +643,17 @@ $("los").onclick = async () => {
       clearInterval(uhr);
       if(!d.rezept?.titel) throw new Error("Kein Rezept erkannt." + (d.rezept?.notiz ? " " + d.rezept.notiz : ""));
       $("stand").textContent = ""; $("datei").value = ""; $("gewaehlt").textContent = ""; $("text").value = "";
-      if(VIDEO && NEU_ORIG.length < 5){
+      if(VOR && NEU_ORIG.length < 5){
         $("stand").textContent = "Suche ein Bild aus dem Video …";
-        const bild = await standbild(VIDEO, d.rezept.bild_sekunde);
-        if(bild) NEU_ORIG.unshift(bild);
+        const sb = await standbild(VOR, d.rezept.bild_sekunde);
+        if(sb.datei) NEU_ORIG.unshift(sb.datei); else standGrund = sb.grund;
         $("stand").textContent = "";
       }
       bearbeiten({ ...d.rezept, id: undefined });   // erst prüfen, dann speichern
+      if(VOR) $("eStand").innerHTML = standGrund ? '<span class="f">Kein Bild aus dem Video: ' + esc(standGrund) + "</span>" : '<span class="okf">🖼️ Bild aus dem Video wird mitgespeichert.</span>';
       break;
     }
-  } catch(e){ $("stand").innerHTML = '<span class="f">' + esc(e.message) + "</span>"; }
+  } catch(e){ $("stand").innerHTML = '<span class="f">' + esc(e.message) + "</span>"; if(VOR && VOR.v.isConnected) VOR.weg(); }
   clearInterval(uhr); $("los").disabled = false;
 };
 

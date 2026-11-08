@@ -158,6 +158,7 @@ await p.route("https://generativelanguage.googleapis.com/**", r => r.fulfill({ s
   body: JSON.stringify({ file: { name: "files/video1", uri: "https://generativelanguage.googleapis.com/v1beta/files/video1", mimeType: "video/webm" } }) }));
 await p.click("#neuBtn"); await p.setInputFiles("#datei", { name: "reel.webm", mimeType: "video/webm", buffer: Buffer.from(webm, "base64") });
 await p.click("#los"); await p.waitForSelector("#vEdit:not([hidden])", { timeout: 40000 });
+ok((await p.textContent("#eStand")).includes("wird mitgespeichert"), "Vorschau meldet: Bild aus dem Video wird mitgespeichert");
 await p.fill("#eTitel", "Aus dem Video"); await p.click("#eSpeichern"); await p.waitForSelector("#vRezept:not([hidden]) h2");
 const standLink = p.locator("#vRezept a:has-text('Bild aus dem Video')");
 ok(await standLink.count() === 1 && await p.locator("#vRezept a:has-text('📄')").count() === 0, "Video-Import: „🖼️ Bild aus dem Video“, kein Video als Original");
@@ -168,6 +169,7 @@ const farbe = await p.evaluate(async b64 => { const img = new Image(); img.src =
 ok(sb.headers.get("content-type") === "image/jpeg" && farbe.r > 200 && farbe.gr > 100 && farbe.bl < 80 && farbe.w === 320, "Standbild zeigt das „Gericht“ (orange), nicht den schwarzen Anfang");
 await p.click("#zur");
 ok(await p.locator("#liste .li:has-text('Aus dem Video') .icon img").count() === 1, "Standbild als Vorschaubild in der Liste");
+ok(await p.evaluate(() => document.querySelectorAll("video").length) === 0, "unsichtbares Video wieder entfernt");
 await p.click("#liste .li:has-text('Aus dem Video')"); await p.click("#loesch"); await p.waitForSelector("#vListe:not([hidden])");
 
 // Text-Import danach: kein Original übrig vom vorigen Foto
