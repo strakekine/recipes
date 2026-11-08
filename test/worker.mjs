@@ -211,6 +211,11 @@ ok(!seite.includes("<b>") && seite.split("</script>").length === 2, "Seite escap
 ok((await worker.fetch(new Request("https://w/bring/aaaaaaaaaaaaaaaa"), env)).status === 404, "unbekannte Bring!-Liste: 404");
 ok((await call("/api/bring", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ zeilen: [] }) })).r.status === 400, "leere Liste abgewiesen");
 
+// Wofür die Rezeptmenge steht
+ok(W.saeubern({ titel: "x", portionen: 26, portion_einheit: "Kräcker", zutaten: [], schritte: [] }).portion_einheit === "Kräcker", "portion_einheit bleibt erhalten");
+ok(W.saeubern({ titel: "x", portionen: 4, zutaten: [], schritte: [] }).portion_einheit === "Personen", "ohne Angabe: Personen");
+ok(W.saeubern({ titel: "x", portionen: 300, zutaten: [], schritte: [] }).portionen === 300, "bis 500 Stück möglich");
+
 // Einheiten in allen Schreibweisen (Befund 08.11.: „60 Parmesan“ statt „60 g“)
 const eh = W.saeubern({ titel: "x", schritte: [], zutaten: [
   { name: "geriebener Parmesan", menge: 60, einheit: "Gramm" }, { name: "Butter", menge: 6, einheit: "Esslöffel" },

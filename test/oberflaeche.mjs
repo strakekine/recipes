@@ -78,7 +78,9 @@ await p.click("#zText"); ok(await p.locator("#zutEd .zr").count() === 6, "zurüc
 await p.locator("#zutEd .zr").nth(0).locator(".zm").fill("viel");
 await p.click("#eSpeichern"); ok((await p.textContent("#eStand")).includes("viel"), "falsche Menge: Hinweis statt Speichern");
 await p.locator("#zutEd .zr").nth(0).locator(".zm").fill("500");
+await p.fill("#eEinheit", "Kräcker");
 await p.click("#eSpeichern"); await p.waitForSelector("#vRezept:not([hidden]) h2");
+ok((await p.textContent("#pWort")) === "Kräcker", "Rezeptmenge mit eigener Einheit (Kräcker statt Personen)");
 ok((await p.textContent("#vRezept h2")) === "Cremige Gnocchi", "gespeichert, Rezept offen");
 ok((await p.textContent("#vRezept")).includes("1 Bund"), "Korrektur übernommen");
 ok(await p.locator("#vRezept li.ng").count() === 1 && await p.locator("#vRezept li.offen").count() === 0, "Pfeffer grau („nach Geschmack“), nichts mehr gelb");
@@ -110,7 +112,7 @@ ok(bringHtml.includes("Klopapier") && bringHtml.includes("1 kg Gnocchi") && !bri
 // Neu laden: Liste aus dem Server, Einkauf aus dem Handy
 await p.goto(APP);
 await p.waitForSelector("#liste .li");
-ok((await p.textContent("#liste")).includes("Cremige Gnocchi"), "nach Neuladen: Rezept da");
+ok((await p.textContent("#liste")).includes("Cremige Gnocchi") && (await p.textContent("#liste")).includes("für 2 Kräcker"), "nach Neuladen: Rezept da, „für 2 Kräcker“");
 ok((await p.textContent("#ekZahl")) === "3", "nach Neuladen: Einkaufsliste da");
 if(BILD){ await p.click("#liste .li"); await p.click("#bearb"); await p.screenshot({ path: BILD + "/bearbeiten.png", fullPage: true }); await p.click("[data-zurueck] >> nth=1"); await p.click("#tR"); }
 // Suche tippen ohne Fokusverlust

@@ -115,8 +115,9 @@ details summary{cursor:pointer;color:var(--m)}
     <div class="k">
       <b id="editTitel">Bearbeiten</b>
       <div style="margin-top:10px"><div class="s">Titel</div><input type="text" id="eTitel"></div>
-      <div class="r"><div style="flex:1"><div class="s">Personen</div><input type="number" inputmode="numeric" id="ePers" min="1" max="100"></div>
-        <div style="flex:1"><div class="s">Zeit (min)</div><input type="number" inputmode="numeric" id="eZeit" min="1"></div></div>
+      <div class="r"><div style="flex:1"><div class="s">Rezept ergibt</div><div style="display:flex;gap:6px"><input type="number" inputmode="numeric" id="ePers" min="1" max="500" style="width:72px;flex:none"><input type="text" id="eEinheit" placeholder="Personen" list="einheitVorschlag"></div>
+        <datalist id="einheitVorschlag"><option value="Personen"><option value="Stück"><option value="Kräcker"><option value="Kekse"><option value="Brötchen"><option value="Kuchen"><option value="Gläser"></datalist></div>
+        <div style="width:96px;flex:none"><div class="s">Zeit (min)</div><input type="number" inputmode="numeric" id="eZeit" min="1"></div></div>
       <div style="margin-top:14px"><div class="s"><b>Zutaten</b></div>
         <div class="zkopf" id="zKopf"><span>Menge</span><span>Einheit</span><span>Zutat</span></div>
         <div id="zutEd"></div>
@@ -147,7 +148,7 @@ details summary{cursor:pointer;color:var(--m)}
 <script>
 /* ==== Logik ==== (kein DOM; test/rezepte.mjs schneidet diesen Block aus) */
 const WORKER = "https://recipes.rjtp6r9s9h.workers.dev";
-const FASSUNG = "08.11.2026 f";
+const FASSUNG = "08.11.2026 g";
 const GAENGE = ["Obst & Gemüse", "Brot & Backwaren", "Kühlregal", "Fleisch & Fisch", "Tiefkühl",
   "Nudeln, Reis & Trockenes", "Konserven & Gläser", "Gewürze, Öl & Saucen", "Backzutaten", "Getränke", "Sonstiges"];
 const EINHEITEN = ["g", "kg", "ml", "l", "EL", "TL", "Prise", "Msp", "Stück", "Dose", "Bund", "Zehe", "Becher", "Pck", "Scheibe", "Handvoll"];
@@ -285,6 +286,9 @@ function zutatAusFeldern(mengeText, einheit, name, alt = {}){
   return z;
 }
 
+/* Wofür die Rezeptmenge steht: „Personen“ (Standard), „Kräcker“, „Stück“, „Kuchen“ … */
+const portionWort = r => (r && r.portion_einheit) || "Personen";
+
 /* ---- Einkaufsliste ---- */
 const basisEinheit = e => e === "kg" ? ["g", 1000] : e === "l" ? ["ml", 1000] : [e || "", 1];
 const schluessel = s => String(s).toLowerCase().replace(/\s+/g, " ").trim();
@@ -378,7 +382,7 @@ function liste(){
     ? '<div class="leer s">Noch keine Rezepte.<br>Tipp auf <b>+ Rezept</b>: PDF, Screenshot oder Video eines Reels wählen.</div>'
     : !treffer.length ? '<div class="leer s">Nichts gefunden.</div>'
     : treffer.map(r => `<div class="li" data-id="${esc(r.id)}"><div class="icon">${r.quelle && /facebook|instagram|tiktok|youtu/i.test(r.quelle) ? "🎬" : "🍽️"}</div>
-      <div><b>${esc(r.titel)}</b><span class="s">${r.zutaten.length} Zutaten${r.zeit_min ? " · " + r.zeit_min + " min" : ""}${r.portionen ? " · für " + r.portionen : ""}</span></div></div>`).join("");
+      <div><b>${esc(r.titel)}</b><span class="s">${r.zutaten.length} Zutaten${r.zeit_min ? " · " + r.zeit_min + " min" : ""}${r.portionen ? " · für " + r.portionen + " " + esc(portionWort(r)) : ""}</span></div></div>`).join("");
   $("liste").querySelectorAll(".li").forEach(el => el.onclick = () => { OFFEN = REZEPTE.find(r => r.id === el.dataset.id); PERS = OFFEN.portionen || 2; zeige("rezept"); });
 }
 $("suche").oninput = liste;
@@ -402,8 +406,8 @@ function rezeptZeigen(){
   }
   $("vRezept").innerHTML = `<button class="zurueck" id="zur">‹ Rezepte</button>
     <h2>${esc(r.titel)}</h2>
-    <div class="s">${r.zeit_min ? "⏱ " + r.zeit_min + " min · " : ""}${r.quelle ? `<a href="${esc(r.quelle)}" target="_blank" rel="noopener">▶ Original ansehen</a>` : ""}</div>
-    <div class="pz">Personen <button class="g" id="pm">−</button><b>${PERS}</b><button class="g" id="pp">+</button>
+    <div class="s">${[r.zeit_min ? "⏱ " + r.zeit_min + " min" : "", r.quelle ? `<a href="${esc(r.quelle)}" target="_blank" rel="noopener">▶ Original ansehen</a>` : ""].filter(Boolean).join(" · ")}</div>
+    <div class="pz"><span id="pWort">${esc(portionWort(r))}</span> <button class="g" id="pm">−</button><b>${PERS}</b><button class="g" id="pp">+</button>
       ${r.portionen ? `<span class="s">(Rezept: ${r.portionen})</span>` : ""}</div>
     <div class="r"><button id="aufListe">🛒 Auf die Einkaufsliste</button><button class="g" id="direktBring">Direkt in Bring!</button></div>
     <h3>Zutaten</h3><ul class="z">${h}</ul>
@@ -414,7 +418,7 @@ function rezeptZeigen(){
     <div id="rStand" class="s"></div>`;
   $("zur").onclick = () => zeige("liste");
   $("pm").onclick = () => { if(PERS > 1){ PERS--; rezeptZeigen(); } };
-  $("pp").onclick = () => { if(PERS < 100){ PERS++; rezeptZeigen(); } };
+  $("pp").onclick = () => { if(PERS < 500){ PERS++; rezeptZeigen(); } };
   $("aufListe").onclick = () => {
     const { liste: l, weg } = einkaufDazu(EINKAUF, r.zutaten, f, r.titel, vorratListe(VORRAT));
     EINKAUF = l; schreib("recipes_einkauf", EINKAUF); ekZahl();
@@ -433,7 +437,7 @@ function rezeptZeigen(){
 function bearbeiten(r){
   EDIT = r || { titel: "", portionen: 2, zutaten: [], schritte: [], notiz: "", quelle: "" };
   $("editTitel").textContent = EDIT.id ? "Bearbeiten" : (r ? "Vorschau prüfen und speichern" : "Neues Rezept von Hand");
-  $("eTitel").value = EDIT.titel || ""; $("ePers").value = EDIT.portionen || ""; $("eZeit").value = EDIT.zeit_min || "";
+  $("eTitel").value = EDIT.titel || ""; $("ePers").value = EDIT.portionen || ""; $("eEinheit").value = EDIT.portion_einheit && EDIT.portion_einheit !== "Personen" ? EDIT.portion_einheit : ""; $("eZeit").value = EDIT.zeit_min || "";
   editorFuellen(EDIT.zutaten || []); textModus(false); $("eSchr").value = (EDIT.schritte || []).join("\n");
   $("eNotiz").value = EDIT.notiz || ""; $("eQuelle").value = EDIT.quelle || ""; $("eStand").textContent = "";
   zeige("edit");
@@ -487,7 +491,7 @@ $("zText").onclick = () => {
 };
 $("eSpeichern").onclick = async () => {
   const r = { ...EDIT,
-    titel: $("eTitel").value.trim(), portionen: Number($("ePers").value) || null, zeit_min: Number($("eZeit").value) || null,
+    titel: $("eTitel").value.trim(), portionen: Number($("ePers").value) || null, portion_einheit: $("eEinheit").value.trim() || "Personen", zeit_min: Number($("eZeit").value) || null,
     zutaten: ZTEXT ? zutatenLesen($("eZut").value, EDIT.zutaten || []) : editorLesen(),
     schritte: $("eSchr").value.split("\n").map(s => s.replace(/^\s*\d+[.)]\s*/, "").trim()).filter(Boolean),
     notiz: $("eNotiz").value.trim(), quelle: $("eQuelle").value.trim() };

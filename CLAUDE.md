@@ -121,3 +121,12 @@ tbsp/tsp …; cl → ml ×10), Einheit am Namensanfang wird herausgelöst („g 
 lesbar machen. Gegen die Dauer: die App verkleinert Fotos vor dem Hochladen auf höchstens 2000 px (`verkleinern`, JPEG
 0,85; PDF/Video unverändert). Ob das die 120 s wirklich drückt, ist am echten Gemini noch nicht gemessen — das Protokoll
 auf der Worker-Testseite zeigt Modell und Zeiten.
+
+## Wofür die Menge steht (08.11.2026, App Fassung g, Worker Fassung i — **Worker neu einfügen nötig**)
+
+Befund vom Nutzer: Croustillants „für 24 bis 28 Kräcker“ kamen als „26 Personen“ an. Jetzt hat jedes Rezept
+`portion_einheit` (Standard „Personen“; sonst „Kräcker“, „Stück“, „Kuchen“ …): Auftrag und Schema fragen danach
+(„nie Personen erfinden, wo das Rezept Stück nennt“; Spanne → Mitte), `saeubern` behält es, `portionen` bis 500.
+App: `portionWort(r)` statt fest „Personen“ über den −/+-Knöpfen, in der Liste („für 26 Kräcker“), im Editor
+„Rezept ergibt [Zahl] [Einheit]“ mit Vorschlagsliste. Alte Rezepte ohne Feld zeigen „Personen“ — beim Bearbeiten
+nachtragen. Kleinkram dabei: kein „·“ mehr hinter der Zeit, wenn es keinen Original-Link gibt.
