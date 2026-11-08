@@ -18,6 +18,9 @@ oft noch die alte Datei. Die Testseite des Workers hat ihre eigene Fassung.
 fokussiertes Feld nie per `.value` überschreiben und keinen Kasten mit fokussiertem Feld per innerHTML neu bauen (sonst
 klappt die Tastatur bei jedem Zeichen zu); Zahlenfelder mit `inputmode`; Home-Icon als PNG (iOS nimmt kein SVG);
 Safari und Home-Bildschirm haben getrennte Speicher (Code dort je einmal eingeben).
+**App-Symbol** (vom Nutzer gewählt, 08.11.2026): Pop-Art-Pfanne mit Spiegelei auf Giftgrün/Lila mit rotem Play-Knopf;
+Vorlage `bilder/icon.svg`, als 180-px-PNG eingebettet. iOS merkt sich das Symbol beim Anlegen — neues Symbol heißt
+vom Home-Bildschirm löschen und neu hinzufügen.
 
 ## Stand und Regeln
 Nutzer: Laurent (Familie). Name vom Nutzer: „Recipes“ (zuerst „Recipies“ geschrieben, auf seinen Wunsch korrigiert).
