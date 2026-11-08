@@ -179,3 +179,9 @@ gesperrt“ …) — beim nächsten Fehlschlag am iPhone diesen Text erfragen.
    (fast alle Rezeptseiten haben es, genau, ohne KI-Raterei), sonst gibt er den Seitentext an Gemini; das Original wäre
    dann der Link. **Instagram/Facebook/TikTok-Links gehen nicht** — die Plattformen sperren Server ohne Anmeldung
    (am 08.11. geprüft: Facebook 403), dort bleiben Bildschirmaufnahme oder Beschreibungstext.
+   **Befund vom Nutzer (08.11., spät):** Link https://yummix.fr/gateau-royal-thermomix/ ins Textfeld → „Rezept“ kam,
+   aber **ohne Mengen, obwohl sie auf der Seite stehen**. Erklärung: Der Worker ruft Webseiten **gar nicht ab**, Gemini
+   bekommt nur den Link als Text und hat das Rezept aus dem Namen/eigenem Wissen nachgebaut; die Mengen ließ es weg, weil
+   der Auftrag Erfinden verbietet. Gefährlich, weil es wie gelesen aussieht. Beim Bauen von Punkt 5: Seite im Worker holen
+   (schema.org/Recipe zuerst, sonst Seitentext an Gemini) oder Geminis `url_context`-Werkzeug; bis dahin sollte ein
+   reiner Webseiten-Link ohne Inhalt in der Vorschau einen Warnhinweis bekommen. Mit diesem Link testen.
