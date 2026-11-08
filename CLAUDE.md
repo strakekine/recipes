@@ -128,5 +128,5 @@ Befund vom Nutzer: Croustillants „für 24 bis 28 Kräcker“ kamen als „26 P
 `portion_einheit` (Standard „Personen“; sonst „Kräcker“, „Stück“, „Kuchen“ …): Auftrag und Schema fragen danach
 („nie Personen erfinden, wo das Rezept Stück nennt“; Spanne → Mitte), `saeubern` behält es, `portionen` bis 500.
 App: `portionWort(r)` statt fest „Personen“ über den −/+-Knöpfen, in der Liste („für 26 Kräcker“), im Editor
-„Rezept ergibt [Zahl] [Einheit]“ mit Vorschlagsliste. Alte Rezepte ohne Feld zeigen „Personen“ — beim Bearbeiten
+„Rezept ergibt [Zahl] [Einheit]“ mit Vorschlägen als Knöpfen darunter (`#eChips`, Fassung h — die erste Fassung hatte eine `datalist`, die Safari nur versteckt über der Tastatur zeigt; vom Nutzer: „alleine hätte ich das nie gefunden“). Alte Rezepte ohne Feld zeigen „Personen“ — beim Bearbeiten
 nachtragen. Kleinkram dabei: kein „·“ mehr hinter der Zeit, wenn es keinen Original-Link gibt.

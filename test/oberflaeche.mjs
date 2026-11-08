@@ -78,7 +78,9 @@ await p.click("#zText"); ok(await p.locator("#zutEd .zr").count() === 6, "zurüc
 await p.locator("#zutEd .zr").nth(0).locator(".zm").fill("viel");
 await p.click("#eSpeichern"); ok((await p.textContent("#eStand")).includes("viel"), "falsche Menge: Hinweis statt Speichern");
 await p.locator("#zutEd .zr").nth(0).locator(".zm").fill("500");
-await p.fill("#eEinheit", "Kräcker");
+ok(await p.locator("#eChips button.on").textContent() === "Personen", "Vorschlag „Personen“ ist markiert");
+await p.click("#eChips button:has-text('Kräcker')");
+ok(await p.inputValue("#eEinheit") === "Kräcker" && await p.locator("#eChips button.on").textContent() === "Kräcker", "Antippen setzt „Kräcker“ und markiert es");
 await p.click("#eSpeichern"); await p.waitForSelector("#vRezept:not([hidden]) h2");
 ok((await p.textContent("#pWort")) === "Kräcker", "Rezeptmenge mit eigener Einheit (Kräcker statt Personen)");
 ok((await p.textContent("#vRezept h2")) === "Cremige Gnocchi", "gespeichert, Rezept offen");

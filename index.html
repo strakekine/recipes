@@ -68,6 +68,10 @@ ol.st{padding-left:22px;margin:0}ol.st li{margin:8px 0}ol.st li::marker{color:va
 .gang{color:var(--lime);font-weight:800;font-size:14px;margin-top:16px;text-transform:uppercase;letter-spacing:.6px}
 details summary{cursor:pointer;color:var(--m)}
 .fuss{text-align:center;color:var(--m);font-size:13px;margin-top:20px}
+/* Vorschläge für „Rezept ergibt“ als Knöpfe (die datalist zeigt Safari nur versteckt über der Tastatur) */
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+.chips button{padding:5px 10px;font-size:13px;font-weight:700;background:transparent;color:var(--m);border:2px solid var(--l);box-shadow:none;border-radius:999px}
+.chips button.on{background:var(--lime);color:#111;border-color:var(--kante)}
 /* Zutaten-Editor: je Zutat Menge, Einheit (Klappmenü), Name */
 .zr{display:flex;gap:6px;align-items:center;margin:6px 0}
 .zr .zm{width:60px;flex:none;padding:9px 6px;text-align:center}
@@ -115,9 +119,9 @@ details summary{cursor:pointer;color:var(--m)}
     <div class="k">
       <b id="editTitel">Bearbeiten</b>
       <div style="margin-top:10px"><div class="s">Titel</div><input type="text" id="eTitel"></div>
-      <div class="r"><div style="flex:1"><div class="s">Rezept ergibt</div><div style="display:flex;gap:6px"><input type="number" inputmode="numeric" id="ePers" min="1" max="500" style="width:72px;flex:none"><input type="text" id="eEinheit" placeholder="Personen" list="einheitVorschlag"></div>
-        <datalist id="einheitVorschlag"><option value="Personen"><option value="Stück"><option value="Kräcker"><option value="Kekse"><option value="Brötchen"><option value="Kuchen"><option value="Gläser"></datalist></div>
+      <div class="r"><div style="flex:1"><div class="s">Rezept ergibt</div><div style="display:flex;gap:6px"><input type="number" inputmode="numeric" id="ePers" min="1" max="500" style="width:72px;flex:none"><input type="text" id="eEinheit" placeholder="Personen"></div></div>
         <div style="width:96px;flex:none"><div class="s">Zeit (min)</div><input type="number" inputmode="numeric" id="eZeit" min="1"></div></div>
+      <div class="chips" id="eChips"><button type="button">Personen</button><button type="button">Stück</button><button type="button">Kräcker</button><button type="button">Kekse</button><button type="button">Brötchen</button><button type="button">Kuchen</button><button type="button">Gläser</button></div>
       <div style="margin-top:14px"><div class="s"><b>Zutaten</b></div>
         <div class="zkopf" id="zKopf"><span>Menge</span><span>Einheit</span><span>Zutat</span></div>
         <div id="zutEd"></div>
@@ -148,7 +152,7 @@ details summary{cursor:pointer;color:var(--m)}
 <script>
 /* ==== Logik ==== (kein DOM; test/rezepte.mjs schneidet diesen Block aus) */
 const WORKER = "https://recipes.rjtp6r9s9h.workers.dev";
-const FASSUNG = "08.11.2026 g";
+const FASSUNG = "08.11.2026 h";
 const GAENGE = ["Obst & Gemüse", "Brot & Backwaren", "Kühlregal", "Fleisch & Fisch", "Tiefkühl",
   "Nudeln, Reis & Trockenes", "Konserven & Gläser", "Gewürze, Öl & Saucen", "Backzutaten", "Getränke", "Sonstiges"];
 const EINHEITEN = ["g", "kg", "ml", "l", "EL", "TL", "Prise", "Msp", "Stück", "Dose", "Bund", "Zehe", "Becher", "Pck", "Scheibe", "Handvoll"];
@@ -437,12 +441,16 @@ function rezeptZeigen(){
 function bearbeiten(r){
   EDIT = r || { titel: "", portionen: 2, zutaten: [], schritte: [], notiz: "", quelle: "" };
   $("editTitel").textContent = EDIT.id ? "Bearbeiten" : (r ? "Vorschau prüfen und speichern" : "Neues Rezept von Hand");
-  $("eTitel").value = EDIT.titel || ""; $("ePers").value = EDIT.portionen || ""; $("eEinheit").value = EDIT.portion_einheit && EDIT.portion_einheit !== "Personen" ? EDIT.portion_einheit : ""; $("eZeit").value = EDIT.zeit_min || "";
+  $("eTitel").value = EDIT.titel || ""; $("ePers").value = EDIT.portionen || ""; $("eEinheit").value = EDIT.portion_einheit && EDIT.portion_einheit !== "Personen" ? EDIT.portion_einheit : ""; chipsMarkieren(); $("eZeit").value = EDIT.zeit_min || "";
   editorFuellen(EDIT.zutaten || []); textModus(false); $("eSchr").value = (EDIT.schritte || []).join("\n");
   $("eNotiz").value = EDIT.notiz || ""; $("eQuelle").value = EDIT.quelle || ""; $("eStand").textContent = "";
   zeige("edit");
 }
 $("handBtn").onclick = () => bearbeiten(null);
+/* Knöpfe werden nicht neu gebaut, nur ihre Markierung wechselt — tippen im Feld bleibt ungestört. */
+function chipsMarkieren(){ const v = $("eEinheit").value.trim() || "Personen"; $("eChips").querySelectorAll("button").forEach(b => b.classList.toggle("on", b.textContent === v)); }
+$("eChips").querySelectorAll("button").forEach(b => b.onclick = () => { $("eEinheit").value = b.textContent === "Personen" ? "" : b.textContent; chipsMarkieren(); });
+$("eEinheit").oninput = chipsMarkieren;
 
 /* Zeilen werden einzeln angelegt und entfernt, nie alle neu gebaut — sonst klappte beim Tippen
    die Tastatur zu (iPhone-Regel). Die Ausgangszutat hängt an der Zeile (_alt). */
