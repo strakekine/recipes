@@ -42,6 +42,9 @@ Regeln:
 - zeit_min: Gesamtzeit in Minuten, wenn erkennbar, sonst null.
 - bild_sekunde: nur bei einem Video — die Sekunde (vom Anfang des Videos gezählt), in der das fertige Gericht am schönsten und am größten zu sehen ist, möglichst ohne eingeblendeten Text. Das wird das Vorschaubild. Ohne Video oder ohne fertiges Gericht: null.
 - schritte: kurz und klar, ein Arbeitsgang je Schritt, Zeiten und Temperaturen wörtlich übernehmen ("10 Minuten köcheln").
+- Kommt der Inhalt einer Webseite mit (strukturierte Rezeptdaten oder Seitentext), übernimm Zutaten, Mengen und Schritte genau von dort.
+- Steht nur ein Link oder ein Rezeptname da, ohne den Inhalt, dann das Rezept NICHT aus eigenem Wissen nachbauen: titel leer und in der notiz sagen, dass der Inhalt fehlt.
+- kategorien: nur, wenn unten Kategorien zur Auswahl stehen — 1 oder 2 passende ids von dort, sonst leer.
 - Ist gar kein Rezept zu erkennen, titel leer lassen und in der notiz sagen, warum.`;
 
 const SCHEMA = {
@@ -59,6 +62,7 @@ const SCHEMA = {
       required: ["name"] } },
     schritte: { type: "ARRAY", items: { type: "STRING" } },
     notiz: { type: "STRING" },
+    kategorien: { type: "ARRAY", items: { type: "STRING" }, description: "ids aus der Kategorienliste im Auftrag" },
   },
   required: ["titel", "zutaten", "schritte"],
 };
@@ -131,7 +135,157 @@ export function saeubern(o){
     quelle: str(o.quelle, 500),
     originale: (Array.isArray(o.originale) ? o.originale : []).filter(x => x && /^[a-z0-9]{24}$/.test(x.id) && ORIGINAL_TYPEN.test(x.typ))
       .slice(0, ORIGINALE_JE_REZEPT).map(x => ({ id: x.id, typ: x.typ, name: str(x.name, 100), groesse: zahl(x.groesse, 1, ORIGINAL_MAX) })),
+    kategorien: [...new Set((Array.isArray(o.kategorien) ? o.kategorien : []).filter(k => typeof k === "string" && KAT_ID.test(k)))].slice(0, 5),
+    ...(typeof o.vorschau === "string" && /^([a-z0-9]{24}|-)$/.test(o.vorschau) ? { vorschau: o.vorschau } : {}),
   };
+}
+
+/* ---------- Rezept aus einem Link ----------
+   Befund 08.11.: ein Link zu yummix.fr kam als Rezept ohne Mengen zurück — der Worker hatte die Seite gar nicht
+   gelesen, Gemini baute das Rezept aus dem Namen nach. Jetzt holt der Worker die Seite selbst. Fast alle
+   Rezeptseiten tragen ein schema.org/Recipe (JSON-LD) für Google; das ist genau und braucht keine Raterei.
+   Fehlt es, bekommt Gemini den Seitentext. Instagram/Facebook/TikTok sperren Server ohne Anmeldung (am 08.11.
+   geprüft: 403) — dort gleich ein klarer Hinweis statt eines nachgebauten Rezepts. */
+export const SOZIAL = /^https?:\/\/(?:[\w-]+\.)*(?:instagram\.com|facebook\.com|fb\.com|fb\.watch|tiktok\.com|threads\.net)(?:[\/?#]|$)/i;
+export const linksAus = text => [...new Set((String(text || "").match(/https?:\/\/[^\s<>"']+/g) || []).map(l => l.replace(/[).,;:!?»“”]+$/, "")))];
+const SEITE_MAX = 3 * 1024 * 1024;
+const LESER = "Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.0 Mobile/15E148 Safari/604.1";
+
+const BENANNT = { amp: "&", lt: "<", gt: ">", quot: '"', apos: "'", nbsp: " ", rsquo: "’", lsquo: "‘", rdquo: "”", ldquo: "“",
+  laquo: "«", raquo: "»", hellip: "…", ndash: "–", mdash: "—", deg: "°", frac12: "½", frac14: "¼", frac34: "¾", szlig: "ß",
+  oelig: "œ", OElig: "Œ", aelig: "æ", times: "×" };
+const AKZENT = { acute: "\u0301", grave: "\u0300", circ: "\u0302", uml: "\u0308", cedil: "\u0327", tilde: "\u0303", ring: "\u030a" };
+const entities = s => String(s).replace(/&(#x[0-9a-f]+|#\d+|[a-z]+\d*);/gi, (all, e) => {
+  if(e[0] === "#") { const n = /^#x/i.test(e) ? parseInt(e.slice(2), 16) : parseInt(e.slice(1), 10); try { return String.fromCodePoint(n); } catch { return ""; } }
+  if(e in BENANNT) return BENANNT[e];
+  const m = e.match(/^([a-zA-Z])(acute|grave|circ|uml|cedil|tilde|ring)$/);   // &eacute; &Uuml; &ccedil; …
+  return m ? (m[1] + AKZENT[m[2]]).normalize("NFC") : all;
+});
+const ohneTags = s => entities(String(s ?? "").replace(/<[^>]*>/g, "")).replace(/\s+/g, " ").trim();
+const istTyp = (o, t) => o && typeof o === "object" && [].concat(o["@type"] || []).some(x => String(x).toLowerCase() === t);
+
+export function rezeptAusLd(html){
+  const bloecke = [...String(html).matchAll(/<script[^>]*type=["']?application\/ld\+json["']?[^>]*>([\s\S]*?)<\/script>/gi)];
+  const suche = (o, tiefe = 0) => {
+    if(!o || typeof o !== "object" || tiefe > 6) return null;
+    if(Array.isArray(o)){ for(const x of o){ const f = suche(x, tiefe + 1); if(f) return f; } return null; }
+    if(istTyp(o, "recipe")) return o;
+    for(const k of ["@graph", "mainEntity", "mainEntityOfPage", "itemListElement", "item"]){ const f = suche(o[k], tiefe + 1); if(f) return f; }
+    return null;
+  };
+  for(const b of bloecke){
+    let o; try { o = JSON.parse(b[1].trim().replace(/^<!--|-->$/g, "")); } catch { continue; }
+    const f = suche(o); if(f) return f;
+  }
+  return null;
+}
+const dauer = d => { const m = String(d || "").match(/^P(?:(\d+)D)?T?(?:(\d+)H)?(?:(\d+)M)?/i); if(!m) return "";
+  const min = (+m[1] || 0) * 1440 + (+m[2] || 0) * 60 + (+m[3] || 0); return min ? min + " Minuten" : ""; };
+export function ldAlsText(ld){
+  const z = [];
+  const name = ohneTags(ld.name); if(name) z.push("Titel: " + name);
+  const ergibt = [].concat(ld.recipeYield || []).map(ohneTags).filter(Boolean); if(ergibt.length) z.push("Ergibt: " + ergibt.join(" / "));
+  const zeit = dauer(ld.totalTime) || dauer(ld.cookTime); if(zeit) z.push("Gesamtzeit: " + zeit);
+  const zut = [].concat(ld.recipeIngredient || ld.ingredients || []).map(ohneTags).filter(Boolean);
+  z.push("Zutaten:"); for(const x of zut) z.push("- " + x);
+  const schritte = [];
+  const lauf = (s, abschnitt) => {
+    if(!s) return;
+    if(typeof s === "string"){ for(const t of s.split(/\n+/)) if(ohneTags(t)) schritte.push(ohneTags(t)); return; }
+    if(Array.isArray(s)){ for(const x of s) lauf(x, abschnitt); return; }
+    if(istTyp(s, "howtosection")){ schritte.push("[" + ohneTags(s.name) + "]"); lauf(s.itemListElement, true); return; }
+    const t = ohneTags(s.text || s.name || ""); if(t) schritte.push(t);
+  };
+  lauf(ld.recipeInstructions);
+  z.push("Schritte:"); schritte.forEach((t, i) => z.push((i + 1) + ". " + t));
+  const besch = ohneTags(ld.description); if(besch) z.push("Beschreibung: " + besch.slice(0, 500));
+  return z.join("\n").slice(0, 30000);
+}
+export function ldBild(ld){
+  let b = ld?.image; if(Array.isArray(b)) b = b[0];
+  if(b && typeof b === "object") b = b.url || b.contentUrl;
+  return typeof b === "string" && /^https?:\/\//.test(b) ? b : "";
+}
+export function seitenText(html){
+  const s = String(html).replace(/<(script|style|noscript|svg|nav|footer|header|form|iframe)\b[\s\S]*?<\/\1>/gi, " ")
+    .replace(/<(br|\/p|\/li|\/h\d|\/div|\/tr)[^>]*>/gi, "\n");
+  return entities(s.replace(/<[^>]*>/g, " ")).replace(/[ \t\r\f\v]+/g, " ").replace(/\s*\n\s*/g, "\n").replace(/\n{2,}/g, "\n").trim().slice(0, 40000);
+}
+const metaBild = html => { const m = String(html).match(/<meta[^>]+property=["']og:image["'][^>]*>/i); const c = m && m[0].match(/content=["']([^"']+)["']/i);
+  return c && /^https?:\/\//.test(entities(c[1])) ? entities(c[1]) : ""; };
+
+/* Holt eine Rezeptseite. Liefert { text, bild, art: "ld"|"text" } oder wirft mit verständlichem Grund. */
+export async function seiteLesen(url){
+  let r;
+  try { r = await fetch(url, { headers: { "user-agent": LESER, accept: "text/html,application/xhtml+xml", "accept-language": "de,fr;q=0.8,en;q=0.6" },
+    redirect: "follow", signal: AbortSignal.timeout(15000) }); }
+  catch(err){ throw new Error(err?.name === "TimeoutError" ? "keine Antwort nach 15 s" : "nicht erreichbar"); }
+  if(!r.ok) throw new Error("die Seite antwortet mit " + r.status + (r.status === 403 ? " (sperrt Server aus)" : ""));
+  const typ = r.headers.get("content-type") || "";
+  if(typ && !/html|xml|text\/plain/i.test(typ)) throw new Error("das ist keine Webseite (" + typ.split(";")[0] + ")");
+  const html = (await r.text()).slice(0, SEITE_MAX);
+  const ld = rezeptAusLd(html);
+  if(ld) return { art: "ld", text: ldAlsText(ld), bild: ldBild(ld) || metaBild(html) };
+  const text = seitenText(html);
+  if(text.length < 200) throw new Error("auf der Seite steht kaum Text (vielleicht nur mit Anmeldung lesbar)");
+  return { art: "text", text, bild: metaBild(html) };
+}
+
+/* ---------- Kategorien ----------
+   Gemeinsame Liste für die ganze Familie, auf dem Server (Tabelle einstellungen), selbst bearbeitbar.
+   Ein Rezept trägt ids in rezept.kategorien. Kachelbilder liegen wie Originale in D1 (rezept = "kategorie"). */
+export const KAT_ID = /^[a-z0-9-]{1,30}$/;
+export const STANDARD_KATEGORIEN = [
+  { id: "vorspeise", name: "Vorspeise", emoji: "🥗" }, { id: "hauptgericht", name: "Hauptgericht", emoji: "🍝" },
+  { id: "beilage", name: "Beilage", emoji: "🥔" }, { id: "dessert", name: "Dessert", emoji: "🍰" },
+  { id: "backen", name: "Backen", emoji: "🥐" }, { id: "snack", name: "Snack", emoji: "🥨" },
+  { id: "getraenk", name: "Getränk", emoji: "🍹" }, { id: "fruehstueck", name: "Frühstück", emoji: "🍳" }];
+const KATEGORIEN_MAX = 40;
+export function katSaeubern(liste){
+  const ids = new Set();
+  return (Array.isArray(liste) ? liste : []).map(k => {
+    if(!k || typeof k !== "object") return null;
+    const name = str(k.name, 30); if(!name) return null;
+    let id = typeof k.id === "string" && KAT_ID.test(k.id) ? k.id : "k-" + zufall(8);
+    if(ids.has(id)) id = "k-" + zufall(8);
+    ids.add(id);
+    const r = { id, name, emoji: [...str(k.emoji, 16)].slice(0, 4).join("") };
+    if(typeof k.bild === "string" && /^[a-z0-9]{24}$/.test(k.bild)) r.bild = k.bild;
+    return r;
+  }).filter(Boolean).slice(0, KATEGORIEN_MAX);
+}
+async function katLesen(db){
+  const z = await db.prepare("SELECT wert FROM einstellungen WHERE schluessel = 'kategorien'").first();
+  if(!z) return STANDARD_KATEGORIEN;
+  try { return katSaeubern(JSON.parse(z.wert)); } catch { return STANDARD_KATEGORIEN; }
+}
+async function kategorien(env, request){
+  const db = env.DB;
+  if(request.method === "GET") return json({ kategorien: await katLesen(db) });
+  if(request.method !== "PUT") return fehler("Methode nicht erlaubt.", 405);
+  const e = await request.json().catch(() => null);
+  if(!e || !Array.isArray(e.kategorien)) return fehler("Keine Kategorienliste.", 400);
+  const alt = await katLesen(db), neu = katSaeubern(e.kategorien);
+  const neuIds = new Set(neu.map(k => k.id));
+  const umziehen = e.umziehen && typeof e.umziehen === "object" ? e.umziehen : {};
+  const weg = alt.filter(k => !neuIds.has(k.id)).map(k => k.id);
+  if(weg.length){
+    /* Gelöschte Kategorie: ihre Rezepte bleiben, verlieren nur die Kategorie — oder ziehen in die gewählte um. */
+    const r = await db.prepare("SELECT id, daten FROM rezepte").all();
+    for(const z of r.results || []){
+      const d = JSON.parse(z.daten);
+      const k = Array.isArray(d.kategorien) ? d.kategorien : [];
+      if(!k.some(x => weg.includes(x))) continue;
+      d.kategorien = [...new Set(k.flatMap(x => !weg.includes(x) ? [x] : neuIds.has(umziehen[x]) ? [umziehen[x]] : []))];
+      await db.prepare("UPDATE rezepte SET daten = ? WHERE id = ?").bind(JSON.stringify(d), z.id).run();
+    }
+  }
+  const neuBilder = new Set(neu.map(k => k.bild).filter(Boolean));
+  for(const k of alt) if(k.bild && !neuBilder.has(k.bild))
+    await db.prepare("DELETE FROM originale WHERE id = ? AND rezept = 'kategorie'").bind(k.bild).run();
+  await db.prepare("INSERT INTO einstellungen (schluessel, wert) VALUES ('kategorien', ?) ON CONFLICT(schluessel) DO UPDATE SET wert = excluded.wert")
+    .bind(JSON.stringify(neu)).run();
+  return json({ kategorien: neu });
 }
 
 const YOUTUBE = /https?:\/\/(?:www\.|m\.)?(?:youtube\.com\/(?:watch\?v=|shorts\/)|youtu\.be\/)[\w-]{6,}[^\s]*/i;
@@ -144,6 +298,7 @@ async function tabellen(db){
   await db.prepare("CREATE TABLE IF NOT EXISTS protokoll (t INTEGER NOT NULL, was TEXT NOT NULL)").run();
   await db.prepare("CREATE TABLE IF NOT EXISTS ergebnisse (id TEXT PRIMARY KEY, daten TEXT NOT NULL, t INTEGER NOT NULL)").run();
   await db.prepare("CREATE TABLE IF NOT EXISTS originale (id TEXT NOT NULL, nr INTEGER NOT NULL, rezept TEXT NOT NULL, typ TEXT NOT NULL, name TEXT, daten BLOB NOT NULL, t INTEGER NOT NULL, PRIMARY KEY (id, nr))").run();
+  await db.prepare("CREATE TABLE IF NOT EXISTS einstellungen (schluessel TEXT PRIMARY KEY, wert TEXT NOT NULL)").run();
 }
 
 /* Kurzes Protokoll der Importe (sichtbar unten auf der Testseite): zeigt, ob die KI fertig
@@ -228,9 +383,25 @@ async function rezeptMachen(env, request, ctx){
     if(f.state !== "ACTIVE") return json({ warten: true }, 202);
   }
 
+  /* Links: Webseite lesen, soziale Netzwerke gleich mit Hinweis abweisen (siehe „Rezept aus einem Link“). */
+  const links = linksAus(text).filter(l => !YOUTUBE.test(l));
+  const rest = links.reduce((t, l) => t.split(l).join(" "), text.replace(YOUTUBE, " ")).replace(/\s+/g, " ").trim();
+  const nurLinks = !dateien.length && !YOUTUBE.test(text) && rest.length < 40;
+  const webLinks = links.filter(l => !SOZIAL.test(l));
+  if(nurLinks && links.length && !webLinks.length)
+    return fehler("Instagram, Facebook und TikTok lassen keine Server rein. Mach eine Bildschirmaufnahme vom Video (mit Ton) oder kopier die Beschreibung unter dem Video hier rein.", 422);
+  let seite = null, seiteFehler = "";
+  if(webLinks.length){
+    try { seite = await seiteLesen(webLinks[0]); }
+    catch(err){ seiteFehler = String(err?.message || err).slice(0, 160); }
+    await notiere(env, seite ? "Seite gelesen (" + (seite.art === "ld" ? "Rezeptdaten" : "Seitentext") + "): " + webLinks[0].slice(0, 120)
+      : "✗ Seite nicht lesbar (" + seiteFehler + "): " + webLinks[0].slice(0, 120));
+    if(!seite && nurLinks)
+      return fehler("Die Seite ließ sich nicht lesen: " + seiteFehler + ". Mach einen Screenshot vom Rezept oder kopier den Rezepttext hier rein.", 422);
+  }
   const db = env.DB;
+  const katListe = db ? (await tabellen(db), await katLesen(db)) : [];
   if(db){
-    await tabellen(db);
     const tag = tagLux();
     const z = await db.prepare("SELECT n FROM importe WHERE tag = ?").bind(tag).first();
     if(z && z.n >= IMPORTE_JE_TAG) return fehler("Für heute sind " + IMPORTE_JE_TAG + " Importe erreicht. Morgen geht es weiter.", 429);
@@ -242,7 +413,12 @@ async function rezeptMachen(env, request, ctx){
   const auftrag = /^[\w-]{8,40}$/.test(e.auftrag || "") ? e.auftrag : "";
   const yt = text.match(YOUTUBE);
   if(yt) parts.push({ file_data: { file_uri: yt[0] } });     // YouTube kann Gemini selbst ansehen
-  parts.push({ text: AUFTRAG + (text ? "\n\nText vom Nutzer (Beschreibung, Link oder Rezept):\n" + text : "") });
+  parts.push({ text: AUFTRAG
+    + (katListe.length ? "\n\nKategorien zur Auswahl (id = Name): " + katListe.map(k => k.id + " = " + k.name).join(", ") : "")
+    + (text ? "\n\nText vom Nutzer (Beschreibung, Link oder Rezept):\n" + text : "")
+    + (seite ? "\n\n" + (seite.art === "ld" ? "Rezeptdaten der verlinkten Webseite (genau übernehmen):\n" : "Text der verlinkten Webseite:\n") + seite.text
+      : seiteFehler ? "\n\n(Die verlinkte Seite ließ sich nicht lesen. Nichts von dort erfinden.)" : "") });
+  const extra = { katIds: katListe.map(k => k.id), bild: seite?.bild || "" };
 
   const modell = str(env.MODELL, 80) || "gemini-flash-latest";
   /* Die KI braucht bei Videos gern über eine Minute. Cloudflare bricht nach 100 s ohne
@@ -258,7 +434,7 @@ async function rezeptMachen(env, request, ctx){
   await notiere(env, "KI gestartet (" + modell + ", " + was + ")");
   const arbeit = (async () => {
     let aus;
-    try { aus = await generieren(env, modell, parts, text, video); }
+    try { aus = await generieren(env, modell, parts, text, video, extra); }
     catch(err){ aus = { fehler: "Fehler im Worker: " + String(err?.message || err).slice(0, 300) }; }
     clearInterval(takt);
     const s = Math.round((Date.now() - t0) / 1000);
@@ -332,7 +508,7 @@ async function einVersuch(env, modell, parts, video = false, ohneDenken = true){
 
 /* Befund 08.11.: bei einem 50-MB-Reel lief gemini-flash-latest zweimal über 100 s in den 524, das leichte
    Modell lieferte danach in rund 14 s ein brauchbares Rezept (9 Zutaten). Darum bei Videos das leichte zuerst. */
-async function generieren(env, modell, parts, text, video){
+async function generieren(env, modell, parts, text, video, extra = {}){
   const modelle = [...new Set(video ? [ERSATZ_MODELL, modell] : [modell, ERSATZ_MODELL])];
   let r;
   for(const [i, m] of modelle.entries()){
@@ -348,6 +524,8 @@ async function generieren(env, modell, parts, text, video){
   if(!rezept) return { fehler: "Gemini hat kein lesbares Rezept geliefert." };
   const quelle = text.match(/https?:\/\/\S+/);
   if(quelle && !rezept.quelle) rezept.quelle = quelle[0].slice(0, 500);
+  rezept.kategorien = rezept.kategorien.filter(k => (extra.katIds || []).includes(k)).slice(0, 2);
+  if(extra.bild) rezept.bild_url = extra.bild.slice(0, 1000);   // Bild der Webseite: die App holt es nach dem Speichern
   return { rezept, modell, erstes: r.erstes };
 }
 
@@ -395,27 +573,74 @@ const ORIGINALE_JE_REZEPT = 5;
 const ORIGINAL_TYPEN = /^(image\/(jpeg|png|webp|heic|heif)|application\/pdf)$/;
 const zufall = n => [...crypto.getRandomValues(new Uint8Array(n))].map(b => "abcdefghijklmnopqrstuvwxyz0123456789"[b % 36]).join("");
 
-async function originalSpeichern(env, request, rid, url){
-  const db = env.DB;
-  const zeile = await db.prepare("SELECT daten FROM rezepte WHERE id = ?").bind(rid).first();
-  if(!zeile) return fehler("Rezept nicht gefunden.", 404);
-  const rezept = JSON.parse(zeile.daten);
-  const typ = str(url.searchParams.get("typ"), 60);
-  if(!ORIGINAL_TYPEN.test(typ)) return fehler("Diese Dateiart wird nicht als Original gespeichert: " + (typ || "unbekannt"), 415);
-  if((rezept.originale || []).length >= ORIGINALE_JE_REZEPT) return fehler("Höchstens " + ORIGINALE_JE_REZEPT + " Originale je Rezept.", 409);
-  const bytes = new Uint8Array(await request.arrayBuffer());
-  if(!bytes.length) return fehler("Leere Datei.", 400);
-  if(bytes.length > ORIGINAL_MAX) return fehler("Original zu groß (über 2 MB), nicht gespeichert.", 413);
-  const id = zufall(24), jetzt = Date.now(), name = str(url.searchParams.get("name"), 100);
-  const befehle = [];
+async function bytesSpeichern(db, besitzer, typ, name, bytes){
+  const id = zufall(24), jetzt = Date.now(), befehle = [];
   for(let nr = 0, ab = 0; ab < bytes.length; nr++, ab += ORIGINAL_STUECK)
     befehle.push(db.prepare("INSERT INTO originale (id, nr, rezept, typ, name, daten, t) VALUES (?, ?, ?, ?, ?, ?, ?)")
-      .bind(id, nr, rid, typ, name, bytes.slice(ab, ab + ORIGINAL_STUECK), jetzt));
+      .bind(id, nr, besitzer, typ, name, bytes.slice(ab, ab + ORIGINAL_STUECK), jetzt));
   if(db.batch) await db.batch(befehle); else for(const b of befehle) await b.run();
-  rezept.originale = [...(rezept.originale || []), { id, typ, name, groesse: bytes.length }];
-  rezept.geaendert = jetzt;
-  await db.prepare("UPDATE rezepte SET daten = ?, geaendert = ? WHERE id = ?").bind(JSON.stringify(rezept), jetzt, rid).run();
+  return id;
+}
+function bytesPruefen(typ, bytes){
+  if(!ORIGINAL_TYPEN.test(typ)) return fehler("Diese Dateiart wird nicht als Original gespeichert: " + (typ || "unbekannt"), 415);
+  if(!bytes.length) return fehler("Leere Datei.", 400);
+  if(bytes.length > ORIGINAL_MAX) return fehler("Original zu groß (über 2 MB), nicht gespeichert.", 413);
+  return null;
+}
+async function rezeptHolen(db, rid){
+  const zeile = await db.prepare("SELECT daten FROM rezepte WHERE id = ?").bind(rid).first();
+  return zeile ? JSON.parse(zeile.daten) : null;
+}
+async function rezeptSchreiben(db, rezept){
+  rezept.geaendert = Date.now();
+  await db.prepare("UPDATE rezepte SET daten = ?, geaendert = ? WHERE id = ?").bind(JSON.stringify(rezept), rezept.geaendert, rezept.id).run();
   return json({ rezept });
+}
+/* Original anhängen; mit vorschau=1 wird es das Vorschaubild (Bild aus der Mediathek, Bild der Webseite). */
+async function originalAnhaengen(env, rid, typ, name, bytes, vorschau){
+  const db = env.DB;
+  const rezept = await rezeptHolen(db, rid);
+  if(!rezept) return fehler("Rezept nicht gefunden.", 404);
+  const falsch = bytesPruefen(typ, bytes); if(falsch) return falsch;
+  if((rezept.originale || []).length >= ORIGINALE_JE_REZEPT) return fehler("Höchstens " + ORIGINALE_JE_REZEPT + " Originale je Rezept.", 409);
+  const id = await bytesSpeichern(db, rid, typ, name, bytes);
+  rezept.originale = [...(rezept.originale || []), { id, typ, name, groesse: bytes.length }];
+  if(vorschau) rezept.vorschau = id;
+  return rezeptSchreiben(db, rezept);
+}
+async function originalSpeichern(env, request, rid, url){
+  const bytes = new Uint8Array(await request.arrayBuffer());
+  return originalAnhaengen(env, rid, str(url.searchParams.get("typ"), 60), str(url.searchParams.get("name"), 100), bytes, url.searchParams.get("vorschau") === "1");
+}
+/* Bild von einer Adresse holen (Bild der Rezept-Webseite). */
+async function originalVonUrl(env, rid, url){
+  const ziel = url.searchParams.get("url") || "";
+  if(!/^https?:\/\//.test(ziel)) return fehler("Keine Bildadresse.", 400);
+  let r;
+  try { r = await fetch(ziel, { headers: { "user-agent": LESER, accept: "image/*" }, redirect: "follow", signal: AbortSignal.timeout(15000) }); }
+  catch { return fehler("Bild nicht erreichbar.", 502); }
+  if(!r.ok) return fehler("Bild nicht geladen (" + r.status + ").", 502);
+  const typ = (r.headers.get("content-type") || "").split(";")[0].trim().toLowerCase();
+  if(!/^image\/(jpeg|png|webp)$/.test(typ)) return fehler("Kein JPEG/PNG/WebP-Bild (" + (typ || "unbekannt") + ").", 415);
+  const bytes = new Uint8Array(await r.arrayBuffer());
+  const name = (ziel.split(/[?#]/)[0].split("/").pop() || "bild").slice(0, 100);
+  return originalAnhaengen(env, rid, typ, name, bytes, url.searchParams.get("vorschau") === "1");
+}
+async function originalLoeschen(env, rid, oid){
+  const db = env.DB;
+  const rezept = await rezeptHolen(db, rid);
+  if(!rezept) return fehler("Rezept nicht gefunden.", 404);
+  if(!(rezept.originale || []).some(o => o.id === oid)) return fehler("Original nicht gefunden.", 404);
+  await db.prepare("DELETE FROM originale WHERE id = ? AND rezept = ?").bind(oid, rid).run();
+  rezept.originale = rezept.originale.filter(o => o.id !== oid);
+  if(rezept.vorschau === oid) delete rezept.vorschau;
+  return rezeptSchreiben(db, rezept);
+}
+async function kategorieBild(env, request, url){
+  const typ = str(url.searchParams.get("typ"), 60), bytes = new Uint8Array(await request.arrayBuffer());
+  if(!/^image\//.test(typ)) return fehler("Nur Bilder.", 415);
+  const falsch = bytesPruefen(typ, bytes); if(falsch) return falsch;
+  return json({ id: await bytesSpeichern(env.DB, "kategorie", typ, str(url.searchParams.get("name"), 100), bytes) });
 }
 
 const alsBytes = v => v instanceof Uint8Array ? v : v instanceof ArrayBuffer ? new Uint8Array(v)
@@ -453,9 +678,11 @@ async function rezepte(env, request, id){
     const r = saeubern(e);
     if(!r || !r.titel) return fehler("Rezept ohne Titel wird nicht gespeichert.", 400);
     const jetzt = Date.now();
-    const alt = await db.prepare("SELECT daten FROM rezepte WHERE id = ?").bind(id).first();
-    const erstellt = alt ? JSON.parse(alt.daten).erstellt : jetzt;
-    const daten = { ...r, id, erstellt, geaendert: jetzt };
+    const alt = await rezeptHolen(db, id);
+    /* Originale verwaltet nur der Worker (anhängen/löschen); was das Handy mitschickt, kann veraltet sein. */
+    r.originale = alt?.originale || [];
+    if(r.vorschau && r.vorschau !== "-" && !r.originale.some(o => o.id === r.vorschau)) delete r.vorschau;
+    const daten = { ...r, id, erstellt: alt?.erstellt || jetzt, geaendert: jetzt };
     await db.prepare("INSERT INTO rezepte (id, daten, geaendert) VALUES (?, ?, ?) ON CONFLICT(id) DO UPDATE SET daten = excluded.daten, geaendert = excluded.geaendert")
       .bind(id, JSON.stringify(daten), jetzt).run();
     return json({ rezept: daten });
@@ -518,6 +745,12 @@ export default {
       if(url.pathname === "/api/bring" && request.method === "POST") return mit(await bringAnlegen(env, request, basis));
       const og = url.pathname.match(/^\/api\/original\/([\w-]{6,40})$/);
       if(og && request.method === "PUT") return mit(await originalSpeichern(env, request, og[1], url));
+      const ou = url.pathname.match(/^\/api\/original-url\/([\w-]{6,40})$/);
+      if(ou && request.method === "PUT") return mit(await originalVonUrl(env, ou[1], url));
+      const od = url.pathname.match(/^\/api\/original\/([\w-]{6,40})\/([a-z0-9]{24})$/);
+      if(od && request.method === "DELETE") return mit(await originalLoeschen(env, od[1], od[2]));
+      if(url.pathname === "/api/kategorien") return mit(await kategorien(env, request));
+      if(url.pathname === "/api/kategorie-bild" && request.method === "PUT") return mit(await kategorieBild(env, request, url));
       const m = url.pathname.match(/^\/api\/rezepte(?:\/([^/]+))?$/);
       if(m) return mit(await rezepte(env, request, m[1]));
       return mit(fehler("Nicht gefunden.", 404));
@@ -554,7 +787,7 @@ label.file{display:block;border:2px dashed var(--l);border-radius:12px;padding:1
 <div class="k" id="ergebnis" hidden></div>
 <div class="k"><b>Gespeichert</b><div id="liste" class="s">–</div></div>
 <details class="k" id="protK"><summary><b>Protokoll</b> <span class="s">(was der Worker zuletzt gemacht hat)</span></summary><div id="prot" class="s">–</div></details>
-<div class="s" style="text-align:center">Fassung 08.11.2026 k</div>
+<div class="s" style="text-align:center">Fassung 09.11.2026 a</div>
 </main><script>
 const $=id=>document.getElementById(id);
 let CODE="";try{CODE=localStorage.getItem("recipes_code")||""}catch{}

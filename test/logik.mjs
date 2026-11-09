@@ -3,7 +3,7 @@ import { readFileSync } from "node:fs";
 const html = readFileSync(new URL("../index.html", import.meta.url), "utf8");
 const a = html.indexOf("/* ==== Logik ===="), b = html.indexOf("/* ==== Oberfläche ====");
 if(a < 0 || b < 0) throw new Error("Marken Logik/Oberfläche nicht gefunden");
-const L = new Function(html.slice(a, b) + "; return { mengeLesen, mengeEingabe, zutatAusFeldern, istNachGeschmack, zeileLesen, mengeText, zeileAus, zutatenText, zutatenLesen, gangRaten, einkaufDazu, einkaufText, nachGang, istVorrat, vorratListe, sucheTrifft, zahlLesen };")();
+const L = new Function(html.slice(a, b) + "; return { mengeLesen, mengeEingabe, zutatAusFeldern, istNachGeschmack, zeileLesen, mengeText, zeileAus, zutatenText, zutatenLesen, gangRaten, einkaufDazu, einkaufText, nachGang, istVorrat, vorratListe, sucheTrifft, zahlLesen, timerAus, uhrText, rezepteInKat };")();
 
 let fehler = 0;
 const ok = (x, t) => { console.log((x ? "✓ " : "✗ ") + t); if(!x) fehler++; };
@@ -82,6 +82,18 @@ ok(!L.istVorrat("Olivenöl", L.vorratListe("Öl")) && L.istVorrat("Olivenöl ext
 // Suche
 const r = { titel: "Croissant Mozzarella-Sandwich", zutaten: [{ name: "Burrata" }, { name: "Rucola" }] };
 ok(L.sucheTrifft(r, "rucola") && L.sucheTrifft(r, "croissant burrata") && !L.sucheTrifft(r, "lachs"), "Suche über Titel und Zutaten");
+
+
+// Küchenmodus: Zeiten im Schritt
+gleich(L.timerAus("10 Minuten köcheln").map(t => [t.sek, t.label]), [[600, "10 min"]], "10 Minuten");
+gleich(L.timerAus("2–3 Min. anbraten, dann 1 Stunde ruhen").map(t => [t.sek, t.label]), [[120, "2–3 min"], [3600, "1 Std."]], "Spanne (kürzere Zeit) und Stunde");
+gleich(L.timerAus("1,5 Std. backen, 30 Sekunden rühren").map(t => t.sek), [5400, 30], "Komma-Stunden, Sekunden");
+gleich(L.timerAus("bei 180 °C backen, 2 h gehen lassen, 20 min").map(t => t.sek), [7200, 1200], "°C ist keine Zeit, h und min");
+gleich(L.timerAus("4 Eier, 200 g Mehl, Minze hacken"), [], "Mengen und „Minze“ sind keine Zeiten");
+ok(L.uhrText(65) === "1:05" && L.uhrText(3725) === "1:02:05" && L.uhrText(-3) === "0:00", "Restzeit als Uhr");
+// Kategorien
+const RK = [{ id: "a", kategorien: ["x"] }, { id: "b", kategorien: ["x", "y"] }, { id: "c" }, { id: "d", kategorien: ["weg"] }];
+ok(L.rezepteInKat(RK, "x", ["x", "y"]).map(r => r.id).join() === "a,b" && L.rezepteInKat(RK, "ohne", ["x", "y"]).map(r => r.id).join() === "c,d" && L.rezepteInKat(RK, "alle", []).length === 4, "Rezepte je Kategorie, „ohne“ zählt unbekannte Kategorien mit");
 
 console.log(fehler ? `\n${fehler} Fehler` : "\nAlles grün");
 process.exit(fehler ? 1 : 0);

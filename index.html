@@ -16,6 +16,7 @@
 /* Farben vom App-Symbol (Pop-Art): Lila, Giftgrün, Pink, Gelb, harte schwarze Kanten. */
 :root{--bg:#170a2e;--p:#25124a;--p2:#32195f;--l:#4a2b86;--t:#fff;--m:#c2b3e6;--lime:#c6ff3d;--lila:#7b2cff;--pink:#ff4f6d;--gelb:#ffd23f;--ng:#9d8cc4;--kante:#07020f}
 *{box-sizing:border-box}
+[hidden]{display:none!important}
 html,body{margin:0;background:var(--bg);color:var(--t);font:16px/1.45 system-ui,-apple-system,"Segoe UI",sans-serif;-webkit-font-smoothing:antialiased}
 header{position:sticky;top:0;z-index:20;background:var(--bg);border-bottom:3px solid var(--lila)}
 .wrap{max-width:680px;margin:0 auto;padding:10px 16px}
@@ -82,6 +83,44 @@ details summary{cursor:pointer;color:var(--m)}
 .zr.gr .zn{font-weight:800;color:var(--pink)}
 .zr.ngz .zm{display:none}.zr.ngz select{width:170px;color:var(--ng)}
 .zkopf{display:flex;gap:6px;font-size:12px;color:var(--m);margin-top:4px}.zkopf span:nth-child(1){width:60px;text-align:center}.zkopf span:nth-child(2){width:104px}
+/* Kategorie-Kacheln auf der Startseite */
+.kacheln{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:12px}
+@media(min-width:560px){.kacheln{grid-template-columns:1fr 1fr 1fr}}
+.kachel{background:var(--p);border:2px solid var(--kante);border-radius:16px;box-shadow:4px 4px 0 var(--kante);overflow:hidden;cursor:pointer;text-align:left;padding:0;color:var(--t);font-weight:400}
+.kachel .bild{aspect-ratio:4/3;background:var(--lila);display:flex;align-items:center;justify-content:center;font-size:44px;border-bottom:2px solid var(--kante)}
+.kachel .bild img{width:100%;height:100%;object-fit:cover;display:block}
+.kachel .unter{padding:8px 10px}.kachel b{display:block;font-size:16px;line-height:1.2}.kachel .s{font-size:13px}
+.kachel.alle .bild{background:var(--lime)}.kachel.ohne .bild{background:var(--p2)}
+.katkopf{display:flex;align-items:center;gap:10px;margin-top:8px}.katkopf h2{font-size:24px}
+.pills{display:flex;flex-wrap:wrap;gap:6px;margin:6px 0}.pill{background:var(--p2);border:2px solid var(--l);border-radius:999px;padding:2px 10px;font-size:13px;color:var(--m)}
+/* Kategorien bearbeiten */
+.kr{display:flex;gap:6px;align-items:center;margin:8px 0}
+.kr .ke{width:52px;flex:none;text-align:center;font-size:20px;padding:6px}
+.kr .kn{flex:1;min-width:0}
+.kr .kb{flex:none;width:46px;height:46px;padding:0;overflow:hidden;background:var(--lila);box-shadow:none;font-size:18px}
+.kr .kb img{width:100%;height:100%;object-fit:cover;display:block}
+.kr .x,.kr .hoch{flex:none;padding:7px 9px;box-shadow:none;background:transparent;color:var(--m);border-color:var(--l)}
+.kr.weg{flex-wrap:wrap;background:var(--p2);border-radius:12px;padding:8px}
+/* Vorschaubild im Editor */
+.bilder{display:flex;flex-wrap:wrap;gap:10px;margin-top:8px}
+.bw{position:relative;width:84px;height:84px;border:3px solid var(--l);border-radius:12px;overflow:hidden;padding:0;background:var(--p2);box-shadow:none;color:var(--m);font-size:13px;font-weight:700}
+.bw img{width:100%;height:100%;object-fit:cover;display:block}
+.bw.on{border-color:var(--lime);box-shadow:3px 3px 0 var(--kante)}
+.bw .bx{position:absolute;top:2px;right:2px;width:24px;height:24px;border-radius:50%;background:var(--kante);color:#fff;font-size:12px;line-height:24px;text-align:center}
+/* Küchenmodus */
+#kueche{position:fixed;inset:0;z-index:40;background:var(--bg);overflow-y:auto;-webkit-overflow-scrolling:touch}
+#kueche .in{max-width:680px;margin:0 auto;padding:12px 16px 30px;min-height:100%;display:flex;flex-direction:column}
+.kk{display:flex;align-items:center;justify-content:space-between;gap:8px;position:sticky;top:0;background:var(--bg);padding:4px 0 8px;z-index:2}
+#kTitel{color:var(--lime);font-weight:900;font-size:15px;margin-top:4px}
+#kSchritt{font-size:27px;line-height:1.35;font-weight:700;margin:18px 0;flex:1}
+#kSchritt .nr{display:block;color:var(--pink);font-size:15px;font-weight:900;text-transform:uppercase;letter-spacing:.6px;margin-bottom:6px}
+#kSchritt mark{background:var(--gelb);color:#111;border-radius:6px;padding:0 4px}
+.knav{display:flex;gap:10px;margin-top:10px}.knav button{flex:1;padding:16px;font-size:18px}
+.tl{display:flex;align-items:center;gap:10px;background:var(--p);border:2px solid var(--kante);border-radius:12px;padding:8px 12px;margin:6px 0;box-shadow:3px 3px 0 var(--kante)}
+.tl b{font-size:22px;font-variant-numeric:tabular-nums;min-width:5ch}.tl span{flex:1;color:var(--m);font-size:14px}
+.tl.fertig{background:var(--pink);animation:blink 1s infinite}.tl.fertig span{color:#fff}
+@keyframes blink{50%{opacity:.55}}
+#kZutBox{background:var(--p);border:2px solid var(--kante);border-radius:14px;padding:6px 12px;margin-top:8px}
 </style>
 </head>
 <body>
@@ -100,13 +139,25 @@ details summary{cursor:pointer;color:var(--m)}
     <div class="r" style="margin-top:0"><input type="search" id="suche" placeholder="Suchen: Rezept oder Zutat" style="flex:1"><button id="neuBtn">+ Rezept</button></div>
     <div id="liste"></div>
   </section>
+  <!-- Kategorien bearbeiten -->
+  <section id="vKats" hidden>
+    <button class="zurueck" data-zurueck>‹ Zurück</button>
+    <div class="k"><b>Kategorien bearbeiten</b>
+      <div class="s">Gilt für die ganze Familie. Emoji, Name und auf Wunsch ein eigenes Kachelbild (sonst nimmt die Kachel das Bild des neuesten Rezepts).</div>
+      <div id="katEd" style="margin-top:8px"></div>
+      <div class="r"><button class="g klein" id="katPlus">+ Kategorie</button></div>
+      <div class="r"><button id="katSpeichern">Speichern</button><button class="g" data-zurueck>Abbrechen</button></div>
+      <div id="katStand" class="s"></div>
+    </div>
+    <input type="file" id="katDatei" accept="image/*" hidden>
+  </section>
   <!-- Neues Rezept -->
   <section id="vNeu" hidden>
     <button class="zurueck" data-zurueck>‹ Zurück</button>
     <div class="k"><b>Neues Rezept</b>
       <label class="file">📄 🖼️ 🎬<br>PDF, Screenshots, Fotos oder Bildschirmaufnahme wählen<input type="file" id="datei" multiple accept="image/*,application/pdf,video/*" hidden></label>
       <div id="gewaehlt" class="s" style="margin-top:6px"></div>
-      <div style="margin-top:10px"><textarea id="text" placeholder="oder Text einfügen: Beschreibung, Rezepttext oder YouTube-Link. Den Link zum Reel gern dazu, dann ist er im Rezept gespeichert."></textarea></div>
+      <div style="margin-top:10px"><textarea id="text" placeholder="oder Text einfügen: Rezepttext, Link zu einer Rezept-Webseite oder YouTube-Link. Den Link zum Reel gern dazu, dann ist er im Rezept gespeichert."></textarea></div>
       <div class="r"><button id="los">Rezept machen</button><button class="g" id="handBtn">Von Hand eintippen</button></div>
       <div id="stand" class="s" style="margin-top:8px"></div>
       <div class="s" style="margin-top:10px">Tipp für Reels: Bildschirmaufnahme (Kontrollzentrum ⏺), in Fotos auf den Rezept-Teil kürzen, hier wählen.</div>
@@ -122,7 +173,8 @@ details summary{cursor:pointer;color:var(--m)}
       <div style="margin-top:10px"><div class="s">Titel</div><input type="text" id="eTitel"></div>
       <div class="r"><div style="flex:1"><div class="s">Rezept ergibt</div><div style="display:flex;gap:6px"><input type="number" inputmode="numeric" id="ePers" min="1" max="500" style="width:72px;flex:none"><input type="text" id="eEinheit" placeholder="Personen"></div></div>
         <div style="width:96px;flex:none"><div class="s">Zeit (min)</div><input type="number" inputmode="numeric" id="eZeit" min="1"></div></div>
-      <div class="chips" id="eChips"><button type="button">Personen</button><button type="button">Stück</button><button type="button">Kräcker</button><button type="button">Kekse</button><button type="button">Brötchen</button><button type="button">Kuchen</button><button type="button">Gläser</button></div>
+      <div class="chips" id="eChips" style="margin-bottom:4px"><button type="button">Personen</button><button type="button">Stück</button><button type="button">Kräcker</button><button type="button">Kekse</button><button type="button">Brötchen</button><button type="button">Kuchen</button><button type="button">Gläser</button></div>
+      <div style="margin-top:12px"><div class="s"><b>Kategorie</b> <span class="s">(antippen, auch mehrere)</span></div><div class="chips" id="eKats"></div></div>
       <div style="margin-top:14px"><div class="s"><b>Zutaten</b></div>
         <div class="zkopf" id="zKopf"><span>Menge</span><span>Einheit</span><span>Zutat</span></div>
         <div id="zutEd"></div>
@@ -132,6 +184,8 @@ details summary{cursor:pointer;color:var(--m)}
       <div style="margin-top:10px"><div class="s">Schritte — einer je Zeile</div><textarea id="eSchr" style="min-height:160px"></textarea></div>
       <div style="margin-top:10px"><div class="s">Notiz</div><textarea id="eNotiz" style="min-height:60px"></textarea></div>
       <div style="margin-top:10px"><div class="s">Link zum Original</div><input type="text" id="eQuelle" inputmode="url"></div>
+      <div style="margin-top:14px"><div class="s"><b>Vorschaubild</b> <span class="s">(antippen zum Auswählen)</span></div><div class="bilder" id="eBild"></div><div id="eBildS" class="s"></div>
+        <input type="file" id="eBildDatei" accept="image/*" hidden></div>
       <div class="r"><button id="eSpeichern">Speichern</button><button class="g" data-zurueck>Abbrechen</button></div>
       <div id="eStand" class="s"></div>
     </div>
@@ -150,10 +204,21 @@ details summary{cursor:pointer;color:var(--m)}
   </section>
   <div class="fuss">Fassung <span id="fassung"></span></div>
 </main>
+<!-- Küchenmodus -->
+<div id="kueche" hidden><div class="in">
+  <div class="kk"><button class="g klein" id="kZu">✕ Schließen</button><span class="s" id="kPos"></span><button class="g klein" id="kZut">🥕 Zutaten</button></div>
+  <div id="kTitel"></div>
+  <div id="kZutBox" hidden></div>
+  <div id="kTimer"></div>
+  <div id="kSchritt"></div>
+  <div id="kTimerKnopf" class="r"></div>
+  <div id="kWach" class="s"></div>
+  <div class="knav"><button class="g" id="kVor">‹ Zurück</button><button id="kNach">Weiter ›</button></div>
+</div></div>
 <script>
 /* ==== Logik ==== (kein DOM; test/rezepte.mjs schneidet diesen Block aus) */
 const WORKER = "https://recipes.rjtp6r9s9h.workers.dev";
-const FASSUNG = "08.11.2026 k";
+const FASSUNG = "09.11.2026 a";
 const GAENGE = ["Obst & Gemüse", "Brot & Backwaren", "Kühlregal", "Fleisch & Fisch", "Tiefkühl",
   "Nudeln, Reis & Trockenes", "Konserven & Gläser", "Gewürze, Öl & Saucen", "Backzutaten", "Getränke", "Sonstiges"];
 const EINHEITEN = ["g", "kg", "ml", "l", "EL", "TL", "Prise", "Msp", "Stück", "Dose", "Bund", "Zehe", "Becher", "Pck", "Scheibe", "Handvoll"];
@@ -334,6 +399,29 @@ function sucheTrifft(r, q){
   const heu = schluessel(r.titel + " " + (r.zutaten || []).map(z => z.name).join(" "));
   return q.split(" ").every(w => heu.includes(w));
 }
+/* Kategorien: "alle", "ohne" (keine bekannte Kategorie) oder eine id */
+function rezepteInKat(rezepte, kat, katIds){
+  if(kat === "alle") return rezepte;
+  if(kat === "ohne") return rezepte.filter(r => !(r.kategorien || []).some(k => katIds.includes(k)));
+  return rezepte.filter(r => (r.kategorien || []).includes(kat));
+}
+/* Zeiten im Schritt für den Küchenmodus-Timer: „10 Minuten“, „2–3 Min.“, „1 Stunde“, „1,5 Std.“, „30 Sekunden“.
+   Bei Spannen zählt die kürzere Zeit (dann nachsehen). */
+const ZEIT_RE = /(\d+(?:[.,]\d+)?)(?:\s*(?:-|–|bis)\s*(\d+(?:[.,]\d+)?))?\s*(Minuten|Minute|Min\.?|min|minutes?|mins?|Stunden|Stunde|Std\.?|h|hours?|heures?|Sekunden|Sekunde|Sek\.?|sec|seconds?)(?![\wäöü])/gi;
+function timerAus(text){
+  const aus = [];
+  for(const m of String(text || "").matchAll(ZEIT_RE)){
+    const a = parseFloat(m[1].replace(",", ".")), e = m[3].toLowerCase();
+    const f = /^(std|stund|h|hour|heure)/.test(e) ? 3600 : /^(sek|sec)/.test(e) ? 1 : 60;
+    const sek = Math.round(a * f);
+    if(sek < 5 || sek > 48 * 3600) continue;
+    const kurz = f === 3600 ? " Std." : f === 1 ? " Sek." : " min";
+    aus.push({ sek, label: m[1] + (m[2] ? "–" + m[2] : "") + kurz, treffer: m[0] });
+  }
+  return aus;
+}
+const uhrText = s => { s = Math.max(0, Math.ceil(s)); const h = Math.floor(s / 3600), m = Math.floor(s % 3600 / 60), x = s % 60;
+  return (h ? h + ":" + String(m).padStart(2, "0") : m) + ":" + String(x).padStart(2, "0"); };
 /* ==== Oberfläche ==== */
 const $ = id => document.getElementById(id);
 const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({ "&":"&amp;", "<":"&lt;", ">":"&gt;", '"':"&quot;", "'":"&#39;" }[c]));
@@ -346,10 +434,20 @@ let CODE = lies("recipes_code", "");
 let REZEPTE = lies("recipes_rezepte", []);
 let EINKAUF = lies("recipes_einkauf", []);
 let VORRAT = lies("recipes_vorrat", STANDARD_VORRAT);
-let ANSICHT = "liste", OFFEN = null, PERS = 2, EDIT = null;
+let KATS = lies("recipes_kats", []);
+let ANSICHT = "liste", OFFEN = null, PERS = 2, EDIT = null, KAT = null;
 
 const bildUrl = o => WORKER + "/bild/" + o.id;
-const vorschau = r => { const o = (r.originale || []).find(x => /^image\//.test(x.typ)); return o ? bildUrl(o) : ""; };
+/* Vorschaubild: selbst gewählt (rezept.vorschau), „-“ = keins, sonst das erste Foto. */
+const vorschau = r => {
+  if(r.vorschau === "-") return "";
+  const bilder = (r.originale || []).filter(x => /^image\//.test(x.typ));
+  const o = bilder.find(x => x.id === r.vorschau) || bilder[0];
+  return o ? bildUrl(o) : "";
+};
+const katName = k => (k.emoji ? k.emoji + " " : "") + k.name;
+const OBJ = new WeakMap();
+const objUrl = f => { if(!OBJ.has(f)) OBJ.set(f, URL.createObjectURL(f)); return OBJ.get(f); };
 let NEU_ORIG = [];   // Fotos/PDFs aus dem letzten KI-Import, werden beim ersten Speichern mitgeschickt
 function toast(t){ const d = document.createElement("div"); d.className = "toast"; d.textContent = t; document.body.appendChild(d); setTimeout(() => d.remove(), 2200); }
 
@@ -367,14 +465,14 @@ async function api(pfad, opt = {}){
 function zeige(a){
   ANSICHT = a;
   $("vListe").hidden = a !== "liste"; $("vNeu").hidden = a !== "neu"; $("vRezept").hidden = a !== "rezept";
-  $("vEdit").hidden = a !== "edit"; $("vEinkauf").hidden = a !== "einkauf";
+  $("vEdit").hidden = a !== "edit"; $("vEinkauf").hidden = a !== "einkauf"; $("vKats").hidden = a !== "kats";
   $("tR").classList.toggle("on", a !== "einkauf"); $("tE").classList.toggle("on", a === "einkauf");
   if(a === "liste") liste();
   if(a === "rezept") rezeptZeigen();
   if(a === "einkauf") einkauf();
   window.scrollTo(0, 0);
 }
-$("tR").onclick = () => zeige("liste");
+$("tR").onclick = () => { if(ANSICHT === "liste"){ KAT = null; $("suche").value = ""; } zeige("liste"); };
 $("tE").onclick = () => zeige("einkauf");
 document.querySelectorAll("[data-zurueck]").forEach(b => b.onclick = () => {
   const zumRezept = ANSICHT === "edit" && EDIT?.id && OFFEN?.id === EDIT.id;
@@ -382,25 +480,113 @@ document.querySelectorAll("[data-zurueck]").forEach(b => b.onclick = () => {
   EDIT = null; NEU_ORIG = []; zeige(zumRezept ? "rezept" : "liste");
 });
 
-/* ---- Liste ---- */
+/* ---- Liste: Kacheln je Kategorie (vom Nutzer gewünscht), Tippen öffnet die Rezepte der Kategorie ---- */
+function rezeptZeile(r){
+  return `<div class="li" data-id="${esc(r.id)}"><div class="icon">${vorschau(r) ? `<img src="${esc(vorschau(r))}" alt="" loading="lazy">` : r.quelle && /facebook|instagram|tiktok|youtu/i.test(r.quelle) ? "🎬" : "🍽️"}</div>
+      <div><b>${esc(r.titel)}</b><span class="s">${r.zutaten.length} Zutaten${r.zeit_min ? " · " + r.zeit_min + " min" : ""}${r.portionen ? " · für " + r.portionen + " " + esc(portionWort(r)) : ""}</span></div></div>`;
+}
 function liste(){
-  const q = $("suche").value;
-  const treffer = REZEPTE.filter(r => sucheTrifft(r, q));
-  $("liste").innerHTML = !REZEPTE.length
-    ? '<div class="leer s">Noch keine Rezepte.<br>Tipp auf <b>+ Rezept</b>: PDF, Screenshot oder Video eines Reels wählen.</div>'
-    : !treffer.length ? '<div class="leer s">Nichts gefunden.</div>'
-    : treffer.map(r => `<div class="li" data-id="${esc(r.id)}"><div class="icon">${vorschau(r) ? `<img src="${esc(vorschau(r))}" alt="" loading="lazy">` : r.quelle && /facebook|instagram|tiktok|youtu/i.test(r.quelle) ? "🎬" : "🍽️"}</div>
-      <div><b>${esc(r.titel)}</b><span class="s">${r.zutaten.length} Zutaten${r.zeit_min ? " · " + r.zeit_min + " min" : ""}${r.portionen ? " · für " + r.portionen + " " + esc(portionWort(r)) : ""}</span></div></div>`).join("");
-  $("liste").querySelectorAll(".li").forEach(el => el.onclick = () => { OFFEN = REZEPTE.find(r => r.id === el.dataset.id); PERS = OFFEN.portionen || 2; zeige("rezept"); });
+  const q = $("suche").value.trim(), ids = KATS.map(k => k.id), box = $("liste");
+  if(!REZEPTE.length){
+    box.innerHTML = '<div class="leer s">Noch keine Rezepte.<br>Tipp auf <b>+ Rezept</b>: PDF, Screenshot, Video eines Reels oder Link zu einer Rezeptseite.</div>';
+    return;
+  }
+  if(q || KAT){
+    const treffer = (q ? REZEPTE : rezepteInKat(REZEPTE, KAT, ids)).filter(r => sucheTrifft(r, q));
+    const k = KATS.find(x => x.id === KAT);
+    const kopf = q ? "" : `<button class="zurueck" id="katZur">‹ Kategorien</button><h2 style="margin-top:4px">${esc(KAT === "alle" ? "Alle Rezepte" : KAT === "ohne" ? "Ohne Kategorie" : k ? katName(k) : "")}</h2>`;
+    box.innerHTML = kopf + (treffer.length ? treffer.map(rezeptZeile).join("")
+      : '<div class="leer s">' + (q ? "Nichts gefunden." : "Noch keine Rezepte in dieser Kategorie.<br>Im Rezept auf ✎ Bearbeiten tippen und die Kategorie antippen.") + "</div>");
+    box.querySelectorAll(".li").forEach(el => el.onclick = () => { OFFEN = REZEPTE.find(r => r.id === el.dataset.id); PERS = OFFEN.portionen || 2; zeige("rezept"); });
+    if($("katZur")) $("katZur").onclick = () => { KAT = null; liste(); window.scrollTo(0, 0); };
+    return;
+  }
+  const bildAus = rs => { for(const r of rs){ const v = vorschau(r); if(v) return v; } return ""; };   // neuestes Rezept zuerst
+  const kachel = (kat, name, emoji, n, bild, cls = "") => `<button class="kachel ${cls}" data-kat="${esc(kat)}"><div class="bild">${bild ? `<img src="${esc(bild)}" alt="" loading="lazy">` : esc(emoji)}</div>
+    <div class="unter"><b>${esc(name)}</b><span class="s">${n} Rezept${n === 1 ? "" : "e"}</span></div></button>`;
+  let h = kachel("alle", "Alle Rezepte", "📚", REZEPTE.length, "", "alle");
+  for(const k of KATS){ const rs = rezepteInKat(REZEPTE, k.id, ids); h += kachel(k.id, k.name, k.emoji || "🍽️", rs.length, k.bild ? bildUrl({ id: k.bild }) : bildAus(rs)); }
+  const ohne = rezepteInKat(REZEPTE, "ohne", ids);
+  if(ohne.length && KATS.length) h += kachel("ohne", "Ohne Kategorie", "❔", ohne.length, "", "ohne");
+  box.innerHTML = `<div class="kacheln">${h}</div><div class="r" style="justify-content:center;margin-top:18px"><button class="g klein" id="katBearb">⚙️ Kategorien bearbeiten</button></div>`;
+  box.querySelectorAll(".kachel").forEach(b => b.onclick = () => { KAT = b.dataset.kat; liste(); window.scrollTo(0, 0); });
+  $("katBearb").onclick = katsOeffnen;
 }
 $("suche").oninput = liste;
 async function laden(){
   try {
     const { d } = await api("/api/rezepte");
     REZEPTE = d.rezepte; schreib("recipes_rezepte", REZEPTE); $("netz").textContent = "";
+    const { d: k } = await api("/api/kategorien"); KATS = k.kategorien || []; schreib("recipes_kats", KATS);
   } catch(e){ $("netz").textContent = navigator.onLine ? "" : "offline"; if(!/Code/.test(e.message)) console.warn(e); }
   if(ANSICHT === "liste") liste();
 }
+
+/* ---- Kategorien bearbeiten (gilt für die ganze Familie, liegt auf dem Server) ----
+   Zeilen werden einzeln angelegt (iPhone-Regel: kein Neuaufbau mit fokussiertem Feld). */
+let KAT_UMZUG = {}, KAT_BILD_ZEILE = null;
+function katsOeffnen(){
+  KAT_UMZUG = {}; $("katEd").textContent = ""; $("katStand").textContent = "";
+  for(const k of KATS) $("katEd").appendChild(katZeile(k));
+  zeige("kats");
+}
+function katZeile(k = {}){
+  const d = document.createElement("div"); d.className = "kr"; d._id = k.id; d._bild = k.bild || "";
+  d.innerHTML = `<input class="ke" type="text" value="${esc(k.emoji || "")}" placeholder="🙂"><input class="kn" type="text" value="${esc(k.name || "")}" placeholder="Name der Kategorie">
+    <button class="kb" title="Kachelbild"></button><button class="hoch" title="Nach oben">↑</button><button class="x" title="Löschen">✕</button>`;
+  const kb = d.querySelector(".kb");
+  d._zeigen = () => { kb.innerHTML = d._bild ? `<img src="${esc(bildUrl({ id: d._bild }))}" alt="">` : "🖼️"; };
+  d._zeigen();
+  kb.onclick = () => {
+    if(d._bild){ if(confirm("Eigenes Kachelbild entfernen? Dann zeigt die Kachel das Bild des neuesten Rezepts.")){ d._bild = ""; d._zeigen(); } return; }
+    KAT_BILD_ZEILE = d; $("katDatei").value = ""; $("katDatei").click();
+  };
+  d.querySelector(".hoch").onclick = () => { let v = d.previousElementSibling; while(v && v.hidden) v = v.previousElementSibling; if(v) d.parentNode.insertBefore(d, v); };
+  d.querySelector(".x").onclick = () => katLoeschen(d);
+  return d;
+}
+function katLoeschen(d){
+  const name = d.querySelector(".kn").value.trim() || "Kategorie";
+  const n = d._id ? REZEPTE.filter(r => (r.kategorien || []).includes(d._id)).length : 0;
+  if(!n){ d.remove(); return; }
+  /* Rezepte gehen nie verloren: sie verlieren nur die Kategorie oder ziehen in eine andere um. */
+  const andere = [...$("katEd").querySelectorAll(".kr:not(.weg)")].filter(x => x !== d && x._id && !x.hidden);
+  const w = document.createElement("div"); w.className = "kr weg";
+  w.innerHTML = `<div style="width:100%"><b>„${esc(name)}“ löschen?</b> <span class="s">${n} Rezept${n === 1 ? "" : "e"} darin — die Rezepte bleiben. Wohin damit?</span></div>
+    <select style="flex:1;min-width:0"><option value="">Ohne Kategorie</option>${andere.map(x => `<option value="${esc(x._id)}">${esc(x.querySelector(".kn").value)}</option>`).join("")}</select>
+    <button class="klein" data-a="ja">Löschen</button><button class="g klein" data-a="nein">Abbrechen</button>`;
+  d.hidden = true; d.after(w);
+  w.querySelector('[data-a="nein"]').onclick = () => { d.hidden = false; w.remove(); };
+  w.querySelector('[data-a="ja"]').onclick = () => {
+    const ziel = w.querySelector("select").value; d._weg = true; if(ziel) KAT_UMZUG[d._id] = ziel;
+    const zielName = ziel ? andere.find(x => x._id === ziel).querySelector(".kn").value : "";
+    w.innerHTML = `<span class="s" style="flex:1">„${esc(name)}“ wird beim Speichern gelöscht${ziel ? ", die Rezepte kommen zu „" + esc(zielName) + "“" : ""}.</span><button class="g klein">Rückgängig</button>`;
+    w.querySelector("button").onclick = () => { d._weg = false; delete KAT_UMZUG[d._id]; d.hidden = false; w.remove(); };
+  };
+}
+$("katPlus").onclick = () => { const d = katZeile(); $("katEd").appendChild(d); d.querySelector(".kn").focus(); };
+$("katDatei").onchange = async () => {
+  const f0 = $("katDatei").files[0], d = KAT_BILD_ZEILE; if(!f0 || !d) return;
+  $("katStand").textContent = "Lade Bild …";
+  try {
+    const f = await verkleinern(f0, 900);
+    const { d: a } = await api("/api/kategorie-bild?typ=" + encodeURIComponent(f.type) + "&name=" + encodeURIComponent(f.name), { method: "PUT", body: f });
+    d._bild = a.id; d._zeigen(); $("katStand").textContent = "Bild drin — zum Übernehmen Speichern tippen.";
+  } catch(e){ $("katStand").innerHTML = '<span class="f">' + esc(e.message) + "</span>"; }
+};
+$("katSpeichern").onclick = async () => {
+  const liste = [...$("katEd").querySelectorAll(".kr:not(.weg)")].filter(d => !d._weg)
+    .map(d => ({ id: d._id, name: d.querySelector(".kn").value.trim(), emoji: d.querySelector(".ke").value.trim(), ...(d._bild ? { bild: d._bild } : {}) }))
+    .filter(k => k.name);
+  $("katSpeichern").disabled = true; $("katStand").textContent = "Speichere …";
+  try {
+    const { d } = await api("/api/kategorien", { method: "PUT", headers: { "content-type": "application/json" }, body: JSON.stringify({ kategorien: liste, umziehen: KAT_UMZUG }) });
+    KATS = d.kategorien; schreib("recipes_kats", KATS);
+    await laden();   // gelöschte Kategorien ändern Rezepte auf dem Server
+    KAT = null; zeige("liste"); toast("Kategorien gespeichert ✓");
+  } catch(e){ $("katStand").innerHTML = '<span class="f">' + esc(e.message) + "</span>"; }
+  $("katSpeichern").disabled = false;
+};
 
 /* ---- Ein Rezept ---- */
 function rezeptZeigen(){
@@ -414,6 +600,7 @@ function rezeptZeigen(){
   }
   $("vRezept").innerHTML = `<button class="zurueck" id="zur">‹ Rezepte</button>
     <h2>${esc(r.titel)}</h2>
+    ${(r.kategorien || []).map(id => KATS.find(k => k.id === id)).filter(Boolean).map(k => `<span class="pill">${esc(katName(k))}</span>`).join("").replace(/^(.+)$/s, '<div class="pills">$1</div>')}
     <div class="s">${[r.zeit_min ? "⏱ " + r.zeit_min + " min" : "", r.quelle ? `<a href="${esc(r.quelle)}" target="_blank" rel="noopener">▶ Original ansehen</a>` : "",
       ...(r.originale || []).map((o, i, a) => {
         const stand = o.name === "standbild.jpg", echte = a.filter(x => x.name !== "standbild.jpg");
@@ -421,7 +608,7 @@ function rezeptZeigen(){
       })].filter(Boolean).join(" · ")}</div>
     <div class="pz"><span id="pWort">${esc(portionWort(r))}</span> <button class="g" id="pm">−</button><b>${PERS}</b><button class="g" id="pp">+</button>
       ${r.portionen ? `<span class="s">(Rezept: ${r.portionen})</span>` : ""}</div>
-    <div class="r"><button id="aufListe">🛒 Auf die Einkaufsliste</button><button class="g" id="direktBring">Direkt in Bring!</button></div>
+    <div class="r"><button id="kochen">👩‍🍳 Kochen</button><button id="aufListe">🛒 Auf die Einkaufsliste</button><button class="g" id="direktBring">Direkt in Bring!</button></div>
     <h3>Zutaten</h3><ul class="z">${h}</ul>
     ${r.zutaten.some(z => z.menge == null && !istNachGeschmack(z)) ? '<div class="s" style="margin-top:6px">Gelb mit „?“: Menge fehlt. Unter ✎ Bearbeiten eintragen oder „nach Geschmack“ wählen.</div>' : ""}
     <h3>Zubereitung</h3><ol class="st">${r.schritte.map(s => "<li>" + esc(s) + "</li>").join("")}</ol>
@@ -438,6 +625,7 @@ function rezeptZeigen(){
   };
   $("direktBring").onclick = () => bring(r.titel, r.zutaten.filter(z => !istVorrat(z.name, vorratListe(VORRAT))).map(z => [mengeText(z, f), z.name].filter(Boolean).join(" ")), "rStand");
   $("bearb").onclick = () => bearbeiten(r);
+  $("kochen").onclick = () => kochen(r, f);
   $("loesch").onclick = async () => {
     if(!confirm("„" + r.titel + "“ wirklich löschen?")) return;
     try { await api("/api/rezepte/" + encodeURIComponent(r.id), { method: "DELETE" }); REZEPTE = REZEPTE.filter(x => x.id !== r.id); schreib("recipes_rezepte", REZEPTE); OFFEN = null; zeige("liste"); toast("Gelöscht"); }
@@ -452,8 +640,67 @@ function bearbeiten(r){
   $("eTitel").value = EDIT.titel || ""; $("ePers").value = EDIT.portionen || ""; $("eEinheit").value = EDIT.portion_einheit && EDIT.portion_einheit !== "Personen" ? EDIT.portion_einheit : ""; chipsMarkieren(); $("eZeit").value = EDIT.zeit_min || "";
   editorFuellen(EDIT.zutaten || []); textModus(false); $("eSchr").value = (EDIT.schritte || []).join("\n");
   $("eNotiz").value = EDIT.notiz || ""; $("eQuelle").value = EDIT.quelle || ""; $("eStand").textContent = "";
+  EKATS = (EDIT.kategorien || []).filter(k => KATS.some(x => x.id === k)); katChips();
+  bildWahlStart();
   zeige("edit");
 }
+/* Kategorie-Knöpfe im Editor (keine Textfelder darin, Neuaufbau unbedenklich) */
+let EKATS = [];
+function katChips(){
+  $("eKats").innerHTML = KATS.map(k => `<button type="button" data-k="${esc(k.id)}" class="${EKATS.includes(k.id) ? "on" : ""}">${esc(katName(k))}</button>`).join("")
+    || '<span class="s">Noch keine Kategorien — auf der Startseite unter ⚙️ anlegen.</span>';
+  $("eKats").querySelectorAll("button").forEach(b => b.onclick = () => {
+    const k = b.dataset.k; EKATS = EKATS.includes(k) ? EKATS.filter(x => x !== k) : [...EKATS, k]; b.classList.toggle("on", EKATS.includes(k));
+  });
+}
+/* Vorschaubild wählen (vom Nutzer gewünscht): vorhandene Fotos, Bilder aus dem Import, Bild der Webseite,
+   ein Foto aus der Mediathek oder keins. EWAHL = {art: orig|neu|url|datei|kein, id?, i?} */
+let EWAHL = null, NEU_BILD = null;
+function bildWahlStart(){
+  NEU_BILD = null;
+  const bilder = (EDIT.originale || []).filter(o => /^image\//.test(o.typ));
+  const neu = EDIT.id ? -1 : NEU_ORIG.findIndex(f => /^image\//.test(f.type));
+  EWAHL = EDIT.vorschau === "-" ? { art: "kein" }
+    : bilder.some(o => o.id === EDIT.vorschau) ? { art: "orig", id: EDIT.vorschau }
+    : bilder.length ? { art: "orig", id: bilder[0].id }
+    : neu >= 0 ? { art: "neu", i: neu }
+    : EDIT.bild_url ? { art: "url" } : null;
+  $("eBildS").textContent = "";
+  bildWahl();
+}
+function bildWahl(){
+  const gleich = w => EWAHL ? w.art === EWAHL.art && w.id === EWAHL.id && w.i === EWAHL.i : w.art === "kein";
+  const kachel = (w, src, text, weg) => `<button type="button" class="bw ${gleich(w) ? "on" : ""}" data-w="${esc(JSON.stringify(w))}">${src ? `<img src="${esc(src)}" alt="">` : text}${weg ? `<span class="bx" data-weg="${esc(weg)}" title="Bild löschen">✕</span>` : ""}</button>`;
+  const t = [];
+  for(const o of (EDIT.originale || []).filter(o => /^image\//.test(o.typ))) t.push(kachel({ art: "orig", id: o.id }, bildUrl(o), "", EDIT.id ? o.id : ""));
+  if(!EDIT.id) NEU_ORIG.forEach((f, i) => { if(/^image\//.test(f.type)) t.push(kachel({ art: "neu", i }, objUrl(f), "")); });
+  if(EDIT.bild_url) t.push(kachel({ art: "url" }, EDIT.bild_url, ""));
+  if(NEU_BILD) t.push(kachel({ art: "datei" }, objUrl(NEU_BILD), ""));
+  t.push(kachel({ art: "kein" }, "", "Kein<br>Bild"));
+  t.push('<button type="button" class="bw" id="bWaehlen">📷<br>Aus Fotos</button>');
+  $("eBild").innerHTML = t.join("");
+  $("eBild").querySelectorAll("[data-w]").forEach(b => b.onclick = async e => {
+    const weg = e.target.closest("[data-weg]")?.dataset.weg;
+    if(weg) return bildLoeschen(weg);
+    EWAHL = JSON.parse(b.dataset.w); bildWahl();
+  });
+  $("bWaehlen").onclick = () => { $("eBildDatei").value = ""; $("eBildDatei").click(); };
+}
+async function bildLoeschen(oid){
+  if(!confirm("Dieses Bild endgültig löschen?")) return;
+  try {
+    const { d } = await api("/api/original/" + encodeURIComponent(EDIT.id) + "/" + oid, { method: "DELETE" });
+    EDIT.originale = d.rezept.originale; EDIT.vorschau = d.rezept.vorschau;
+    REZEPTE = REZEPTE.map(x => x.id === d.rezept.id ? d.rezept : x); schreib("recipes_rezepte", REZEPTE);
+    if(OFFEN?.id === d.rezept.id) OFFEN = d.rezept;
+    if(EWAHL?.id === oid) bildWahlStart(); else bildWahl();
+  } catch(e){ $("eBildS").innerHTML = '<span class="f">' + esc(e.message) + "</span>"; }
+}
+$("eBildDatei").onchange = async () => {
+  const f = $("eBildDatei").files[0]; if(!f) return;
+  NEU_BILD = await verkleinern(f); EWAHL = { art: "datei" }; bildWahl();
+  $("eBildS").textContent = "Wird beim Speichern hochgeladen.";
+};
 $("handBtn").onclick = () => { NEU_ORIG = []; bearbeiten(null); };
 /* Knöpfe werden nicht neu gebaut, nur ihre Markierung wechselt — tippen im Feld bleibt ungestört. */
 function chipsMarkieren(){ const v = $("eEinheit").value.trim() || "Personen"; $("eChips").querySelectorAll("button").forEach(b => b.classList.toggle("on", b.textContent === v)); }
@@ -510,7 +757,9 @@ $("eSpeichern").onclick = async () => {
     titel: $("eTitel").value.trim(), portionen: Number($("ePers").value) || null, portion_einheit: $("eEinheit").value.trim() || "Personen", zeit_min: Number($("eZeit").value) || null,
     zutaten: ZTEXT ? zutatenLesen($("eZut").value, EDIT.zutaten || []) : editorLesen(),
     schritte: $("eSchr").value.split("\n").map(s => s.replace(/^\s*\d+[.)]\s*/, "").trim()).filter(Boolean),
-    notiz: $("eNotiz").value.trim(), quelle: $("eQuelle").value.trim() };
+    notiz: $("eNotiz").value.trim(), quelle: $("eQuelle").value.trim(), kategorien: EKATS };
+  const wahl = EWAHL; delete r.bild_url;
+  if(wahl?.art === "orig") r.vorschau = wahl.id; else if(wahl?.art === "kein") r.vorschau = "-"; else delete r.vorschau;
   if(!r.titel){ $("eStand").innerHTML = '<span class="f">Bitte einen Titel eingeben.</span>'; return; }
   const kaputt = r.zutaten.find(z => z.fehler);
   if(kaputt){ $("eStand").innerHTML = '<span class="f">' + esc(kaputt.fehler) + "</span>"; return; }
@@ -522,11 +771,23 @@ $("eSpeichern").onclick = async () => {
     if(!r.id && NEU_ORIG.length){
       for(const [i, f] of NEU_ORIG.entries()){
         $("eStand").textContent = "Speichere Original " + (i + 1) + "/" + NEU_ORIG.length + " …";
-        try { ({ d } = await api("/api/original/" + id + "?typ=" + encodeURIComponent(f.type) + "&name=" + encodeURIComponent(f.name), { method: "PUT", body: f })); }
+        const alsVorschau = wahl?.art === "neu" && wahl.i === i ? "&vorschau=1" : "";
+        try { ({ d } = await api("/api/original/" + id + "?typ=" + encodeURIComponent(f.type) + "&name=" + encodeURIComponent(f.name) + alsVorschau, { method: "PUT", body: f })); }
         catch(e){ hinweis = " — Original nicht gespeichert: " + e.message; }
       }
       NEU_ORIG = [];
     }
+    if(wahl?.art === "datei" && NEU_BILD){
+      $("eStand").textContent = "Speichere Bild …";
+      try { ({ d } = await api("/api/original/" + id + "?typ=" + encodeURIComponent(NEU_BILD.type) + "&name=" + encodeURIComponent(NEU_BILD.name) + "&vorschau=1", { method: "PUT", body: NEU_BILD })); }
+      catch(e){ hinweis = " — Bild nicht gespeichert: " + e.message; }
+    }
+    if(wahl?.art === "url" && EDIT.bild_url){
+      $("eStand").textContent = "Hole das Bild der Webseite …";
+      try { ({ d } = await api("/api/original-url/" + id + "?url=" + encodeURIComponent(EDIT.bild_url) + "&vorschau=1", { method: "PUT" })); }
+      catch(e){ hinweis = " — Bild der Webseite nicht geholt: " + e.message; }
+    }
+    NEU_BILD = null;
     REZEPTE = [d.rezept, ...REZEPTE.filter(x => x.id !== id)]; schreib("recipes_rezepte", REZEPTE);
     OFFEN = d.rezept; PERS = d.rezept.portionen || 2; EDIT = null; zeige("rezept"); toast("Gespeichert ✓" + hinweis);
   } catch(e){ $("eStand").innerHTML = '<span class="f">' + esc(e.message) + "</span>"; }
@@ -538,11 +799,11 @@ $("neuBtn").onclick = () => { $("stand").textContent = ""; zeige("neu"); };
 $("datei").onchange = () => { const f = [...$("datei").files]; $("gewaehlt").textContent = f.map(x => x.name + " (" + (x.size / 1048576).toFixed(1) + " MB)").join(", "); };
 /* Handyfotos (12 MP) auf höchstens 2000 px verkleinern: Gemini zerlegt große Bilder in viele Kacheln, das kostet
    Zeit (am 08.11. fast 120 s für ein Foto). 2000 px reichen auch für Handschrift. */
-async function verkleinern(f){
+async function verkleinern(f, max = 2000){
   if(!/^image\/(jpeg|png|heic|heif|webp)$/.test(f.type) || typeof createImageBitmap !== "function") return f;
   try {
     const bmp = await createImageBitmap(f);
-    const sc = Math.min(1, 2000 / Math.max(bmp.width, bmp.height));
+    const sc = Math.min(1, max / Math.max(bmp.width, bmp.height));
     if(sc === 1 && f.size < 1.5e6) return f;
     const c = document.createElement("canvas"); c.width = Math.round(bmp.width * sc); c.height = Math.round(bmp.height * sc);
     c.getContext("2d").drawImage(bmp, 0, 0, c.width, c.height);
@@ -692,6 +953,103 @@ async function bring(titel, zeilen, standId){
   catch(e){ $(standId).innerHTML = '<span class="f">' + esc(e.message) + "</span>"; }
 }
 
+/* ---- Küchenmodus (vom Nutzer gewünscht): ein Schritt groß, Timer aus dem Text, Zutaten abhaken, Bildschirm bleibt an ----
+   Timer laufen weiter, wenn man umblättert oder den Küchenmodus schließt; die Restzeit kommt aus der Endzeit,
+   stimmt also auch, wenn iOS die App im Hintergrund anhält. Ton nur, wenn der Stummschalter aus ist. */
+let K = null, TIMER = [], TAKT = null, WACH = null, AUDIO = null;
+function kochen(r, f){
+  K = { r, f, i: 0, ab: new Set() };
+  $("kueche").hidden = false; document.body.style.overflow = "hidden"; $("kZutBox").hidden = true;
+  kZutaten(); kZeigen(); kTimer(); wachHalten();
+}
+function kSchliessen(){
+  $("kueche").hidden = true; document.body.style.overflow = "";
+  try { WACH?.release(); } catch {} WACH = null;
+}
+function kZeigen(){
+  const n = K.r.schritte.length;
+  $("kTitel").textContent = K.r.titel;
+  $("kPos").textContent = n ? (K.i + 1) + " / " + n : "";
+  const s = K.r.schritte[K.i] || "Dieses Rezept hat keine Schritte.";
+  const tm = timerAus(s);
+  let html = esc(s);
+  for(const t of [...new Set(tm.map(t => t.treffer))]) html = html.split(esc(t)).join("<mark>" + esc(t) + "</mark>");
+  $("kSchritt").innerHTML = (n ? `<span class="nr">Schritt ${K.i + 1}</span>` : "") + html;
+  $("kTimerKnopf").innerHTML = tm.map((t, j) => `<button data-j="${j}">⏱ ${esc(t.label)} starten</button>`).join("");
+  $("kTimerKnopf").querySelectorAll("button").forEach(b => b.onclick = () => {
+    const t = tm[b.dataset.j]; tonBereit();
+    TIMER.push({ label: t.label + " · Schritt " + (K.i + 1), ende: Date.now() + t.sek * 1000 });
+    kTimer(); takt();
+  });
+  $("kVor").disabled = K.i === 0;
+  $("kNach").textContent = K.i >= n - 1 ? "Fertig ✓" : "Weiter ›";
+  $("kueche").scrollTop = 0;
+}
+function kZutaten(){
+  let g = null, h = "";
+  K.r.zutaten.forEach((z, j) => {
+    if((z.gruppe || "") !== g){ g = z.gruppe || ""; if(g) h += `<div class="grp">${esc(g)}</div>`; }
+    h += `<label class="ek ${K.ab.has(j) ? "ok" : ""}"><input type="checkbox" data-j="${j}" ${K.ab.has(j) ? "checked" : ""}><span class="t">${esc([mengeText(z, K.f), z.name].filter(Boolean).join(" "))}</span></label>`;
+  });
+  $("kZutBox").innerHTML = h || '<span class="s">Keine Zutaten.</span>';
+  $("kZutBox").querySelectorAll("input").forEach(c => c.onchange = () => { const j = +c.dataset.j; c.checked ? K.ab.add(j) : K.ab.delete(j); c.closest("label").classList.toggle("ok", c.checked); });
+}
+/* Die Timer-Zeilen werden jede Sekunde nur nachgeführt, nicht neu gebaut — sonst ginge ein Tippen auf „Stopp“ verloren. */
+function kTimer(){
+  const box = $("kTimer"), jetzt = Date.now();
+  if(box.children.length !== TIMER.length){
+    box.innerHTML = TIMER.map((t, j) => `<div class="tl"><b></b><span></span><button class="g klein" data-j="${j}"></button></div>`).join("");
+    box.querySelectorAll("button").forEach(b => b.onclick = () => { TIMER.splice(+b.dataset.j, 1); kTimer(); });
+  }
+  TIMER.forEach((t, j) => {
+    const el = box.children[j], rest = (t.ende - jetzt) / 1000, fertig = rest <= 0;
+    el.classList.toggle("fertig", fertig);
+    el.querySelector("b").textContent = fertig ? "0:00" : uhrText(rest);
+    el.querySelector("span").textContent = t.label + (fertig ? " — fertig!" : "");
+    el.querySelector("button").textContent = fertig ? "OK" : "Stopp";
+  });
+}
+function takt(){
+  if(TAKT) return;
+  TAKT = setInterval(() => {
+    const jetzt = Date.now();
+    for(const t of TIMER) if(t.ende <= jetzt && jetzt - t.ende < 60000 && (!t.piep || jetzt - t.piep >= 10000)){
+      if(!t.piep){ try { navigator.vibrate?.([300, 150, 300, 150, 300]); } catch {} if($("kueche").hidden) toast("⏱ " + t.label + " ist fertig!"); }
+      t.piep = jetzt; piep();
+    }
+    if(!$("kueche").hidden) kTimer();
+    if(!TIMER.length){ clearInterval(TAKT); TAKT = null; }
+  }, 1000);
+}
+function tonBereit(){ try { AUDIO = AUDIO || new (window.AudioContext || window.webkitAudioContext)(); AUDIO.resume?.(); } catch {} }
+function piep(){
+  if(!AUDIO) return;
+  try {
+    const t0 = AUDIO.currentTime;
+    for(const d of [0, 0.35, 0.7]){
+      const o = AUDIO.createOscillator(), g = AUDIO.createGain(); o.frequency.value = 880; o.connect(g); g.connect(AUDIO.destination);
+      g.gain.setValueAtTime(0.0001, t0 + d); g.gain.exponentialRampToValueAtTime(0.5, t0 + d + 0.02); g.gain.exponentialRampToValueAtTime(0.0001, t0 + d + 0.25);
+      o.start(t0 + d); o.stop(t0 + d + 0.3);
+    }
+  } catch {}
+}
+async function wachHalten(){
+  if(!navigator.wakeLock){ $("kWach").textContent = "Dieses Handy kann den Bildschirm von hier aus nicht wach halten."; return; }
+  try { WACH = await navigator.wakeLock.request("screen"); $("kWach").textContent = "💡 Der Bildschirm bleibt an, solange der Küchenmodus offen ist."; }
+  catch { $("kWach").textContent = ""; }
+}
+$("kZu").onclick = kSchliessen;
+$("kZut").onclick = () => { $("kZutBox").hidden = !$("kZutBox").hidden; };
+$("kVor").onclick = () => { if(K.i > 0){ K.i--; kZeigen(); } };
+$("kNach").onclick = () => { if(K.i < K.r.schritte.length - 1){ K.i++; kZeigen(); } else kSchliessen(); };
+/* Wischen zum Blättern */
+let WISCH = null;
+$("kSchritt").addEventListener("touchstart", e => { const t = e.touches[0]; WISCH = [t.clientX, t.clientY]; }, { passive: true });
+$("kSchritt").addEventListener("touchend", e => {
+  if(!WISCH) return; const t = e.changedTouches[0], dx = t.clientX - WISCH[0], dy = t.clientY - WISCH[1]; WISCH = null;
+  if(Math.abs(dx) > 60 && Math.abs(dy) < 50) (dx < 0 ? $("kNach") : $("kVor")).click();
+}, { passive: true });
+
 /* ---- Code ---- */
 $("codeOk").onclick = async () => {
   CODE = $("code").value.trim(); schreib("recipes_code", CODE);
@@ -701,7 +1059,11 @@ $("codeOk").onclick = async () => {
 if(!CODE) $("codeK").hidden = false;
 zeige("liste"); ekZahl();
 if(CODE) laden();
-document.addEventListener("visibilitychange", () => { if(!document.hidden && CODE && ANSICHT === "liste") laden(); });
+document.addEventListener("visibilitychange", () => {
+  if(document.hidden) return;
+  if(!$("kueche").hidden){ wachHalten(); kTimer(); }   // iOS gibt den Wake Lock im Hintergrund frei
+  else if(CODE && ANSICHT === "liste") laden();
+});
 </script>
 </body>
 </html>

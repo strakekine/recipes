@@ -28,11 +28,12 @@ function d1(){
 }
 
 // Nachgebautes Gemini
+const WEB = {};   // nachgebaute Webseiten für den Link-Import
 let G = { state: "PROCESSING", antwort: null, aufrufe: [] };
 globalThis.fetch = async (url, opt = {}) => {
   url = String(url); G.aufrufe.push({ url, opt });
   const h = opt.headers || {};
-  if(!url.includes("generativelanguage.googleapis.com")) return new Response("fremd", { status: 500 });
+  if(!url.includes("generativelanguage.googleapis.com")) return WEB[url] ? WEB[url](opt) : new Response("fremd", { status: 500 });
   if(h["x-goog-api-key"] !== undefined && h["x-goog-api-key"] !== "KEY") return new Response("{}", { status: 403 });
   if(url.endsWith("/upload/v1beta/files")) return new Response("{}", { headers: { "x-goog-upload-url": "https://generativelanguage.googleapis.com/upload/xyz" } });
   if(url.endsWith("/upload/xyz")){
@@ -249,6 +250,86 @@ const eh = W.saeubern({ titel: "x", schritte: [], zutaten: [
   { name: "g geriebener Comté", menge: 250, einheit: "" }, { name: "Rum", menge: 2, einheit: "cl" },
   { name: "Schnittlauch", menge: 2, menge_bis: 3, einheit: "EL" }, { name: "Eier", menge: 2, einheit: "" }] }).zutaten;
 ok(eh.map(z => z.einheit).join() === "g,EL,g,Prise,g,ml,EL," && eh[4].name === "geriebener Comté" && eh[5].menge === 20, "Einheiten: Gramm/Esslöffel/gr./Prisen/im Namen/cl → Kürzel");
+
+
+// Rezept aus einem Link (Befund 08.11.: yummix-Link kam ohne Mengen, weil die Seite nie gelesen wurde)
+const ldSeite = `<html><head><meta property="og:image" content="https://yummix.example/og.jpg">
+<script type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@type":"WebPage","name":"x"},
+{"@type":["Recipe"],"name":"G&acirc;teau royal","recipeYield":["8","8 parts"],"totalTime":"PT1H15M","image":{"@type":"ImageObject","url":"https://yummix.example/gateau.jpg"},
+"recipeIngredient":["200 g de farine","3 &#339;ufs","100 g de sucre"],
+"recipeInstructions":[{"@type":"HowToSection","name":"Pâte","itemListElement":[{"@type":"HowToStep","text":"Mélanger <b>farine</b> et sucre."}]},{"@type":"HowToStep","text":"Cuire 30 min à 180°C."}]}]}</script></head><body>…</body></html>`;
+WEB["https://yummix.example/gateau-royal/"] = () => new Response(ldSeite, { headers: { "content-type": "text/html; charset=utf-8" } });
+const ld0 = W.rezeptAusLd(ldSeite);
+ok(ld0?.name === "G&acirc;teau royal" && W.ldBild(ld0) === "https://yummix.example/gateau.jpg", "schema.org/Recipe in @graph gefunden, Bild aus ImageObject");
+const ldt = W.ldAlsText(ld0);
+ok(ldt.includes("Titel: Gâteau royal") && ldt.includes("- 3 œufs") && ldt.includes("1. [Pâte]") && ldt.includes("2. Mélanger farine et sucre.") && ldt.includes("75 Minuten") && ldt.includes("Ergibt: 8 / 8 parts"), "Rezeptdaten als Text: Zutaten, Abschnitte, Zeit, Entities");
+ok(W.linksAus("Schau mal: https://a.example/x). und https://a.example/x").join() === "https://a.example/x", "Links ohne Satzzeichen, doppelt nur einmal");
+ok(W.SOZIAL.test("https://www.instagram.com/reel/abc") && W.SOZIAL.test("https://fb.watch/xy") && W.SOZIAL.test("https://vm.tiktok.com/z") && !W.SOZIAL.test("https://www.chefkoch.de/x") && !W.SOZIAL.test("https://notfacebook.com.example/"), "soziale Netzwerke erkannt");
+G.antwort = { titel: "Gâteau royal", portionen: 8, zutaten: [{ name: "Mehl", menge: 200, einheit: "g" }], schritte: ["Mischen."], kategorien: ["backen", "gibtsnicht", "dessert", "snack"] };
+G.aufrufe = []; G.modelle = [];
+const lk = await call("/api/rezept", { ...auftrag, body: JSON.stringify({ text: "https://yummix.example/gateau-royal/" }) });
+const lkText = JSON.parse(G.aufrufe.find(a => a.url.includes(":streamGenerateContent")).opt.body).contents[0].parts.at(-1).text;
+ok(lk.d?.rezept?.titel === "Gâteau royal" && lkText.includes("Rezeptdaten der verlinkten Webseite") && lkText.includes("- 200 g de farine"), "Link: Seite gelesen, Rezeptdaten gehen an Gemini");
+ok(lkText.includes("backen = Backen") && lk.d.rezept.kategorien.join() === "backen,dessert", "Kategorien zur Auswahl, unbekannte verworfen, höchstens 2");
+ok(lk.d.rezept.bild_url === "https://yummix.example/gateau.jpg" && lk.d.rezept.quelle === "https://yummix.example/gateau-royal/", "Bild der Seite und Link als Quelle");
+WEB["https://blog.example/rezept"] = () => new Response("<html><body><nav>Menü</nav><h1>Omas Kuchen</h1><p>" + "Zutaten: 250 g Butter, 4 Eier. ".repeat(10) + "</p><script>var x=1</script></body></html>", { headers: { "content-type": "text/html" } });
+G.aufrufe = [];
+await call("/api/rezept", { ...auftrag, body: JSON.stringify({ text: "https://blog.example/rezept" }) });
+const blText = JSON.parse(G.aufrufe.find(a => a.url.includes(":streamGenerateContent")).opt.body).contents[0].parts.at(-1).text;
+ok(blText.includes("Text der verlinkten Webseite") && blText.includes("250 g Butter") && !blText.includes("var x") && !blText.includes("Menü"), "ohne Rezeptdaten: Seitentext ohne Skripte und Menü");
+WEB["https://zu.example/r"] = () => new Response("nein", { status: 403 });
+G.aufrufe = [];
+const zu = await call("/api/rezept", { ...auftrag, body: JSON.stringify({ text: "https://zu.example/r" }) });
+ok(zu.r.status === 422 && zu.d.fehler.includes("403") && zu.d.fehler.includes("Screenshot") && !G.aufrufe.some(a => a.url.includes(":stream")), "Seite gesperrt, nur Link: klarer Fehler statt nachgebautem Rezept");
+G.aufrufe = [];
+const zu2 = await call("/api/rezept", { ...auftrag, body: JSON.stringify({ text: "https://zu.example/r\nZutaten: 200 g Mehl, 3 Eier, 100 g Zucker, alles verrühren und backen." }) });
+ok(zu2.d?.rezept && JSON.parse(G.aufrufe.find(a => a.url.includes(":stream")).opt.body).contents[0].parts.at(-1).text.includes("ließ sich nicht lesen"), "Seite gesperrt, aber Text dabei: Rezept aus dem Text, mit Hinweis");
+const fb = await call("/api/rezept", { ...auftrag, body: JSON.stringify({ text: "https://www.instagram.com/reel/abc123/" }) });
+ok(fb.r.status === 422 && fb.d.fehler.includes("Bildschirmaufnahme"), "nur Instagram-Link: Hinweis auf Bildschirmaufnahme");
+WEB["https://leer.example/"] = () => new Response("<html><body>Bitte anmelden</body></html>", { headers: { "content-type": "text/html" } });
+ok((await call("/api/rezept", { ...auftrag, body: JSON.stringify({ text: "https://leer.example/" }) })).d?.fehler?.includes("kaum Text"), "fast leere Seite: Fehler");
+WEB["https://pdf.example/a.pdf"] = () => new Response("%PDF", { headers: { "content-type": "application/pdf" } });
+ok((await call("/api/rezept", { ...auftrag, body: JSON.stringify({ text: "https://pdf.example/a.pdf" }) })).d?.fehler?.includes("keine Webseite"), "PDF-Link: keine Webseite");
+ok(W.AUFTRAG.includes("NICHT aus eigenem Wissen nachbauen"), "Auftrag verbietet Nachbauen aus dem Namen");
+
+// Kategorien
+const k0 = await call("/api/kategorien");
+ok(k0.d?.kategorien?.length === 8 && k0.d.kategorien[0].id === "vorspeise", "Standardkategorien");
+const katBild = await call("/api/kategorie-bild?typ=image%2Fjpeg&name=k.jpg", { method: "PUT", body: new Uint8Array(500) });
+ok(/^[a-z0-9]{24}$/.test(katBild.d?.id), "Kachelbild gespeichert");
+ok((await call("/api/kategorie-bild?typ=application%2Fpdf", { method: "PUT", body: new Uint8Array(5) })).r.status === 415, "Kachelbild nur als Bild");
+await call("/api/rezepte/katrez1", { method: "PUT", headers: { "content-type": "application/json" }, body: JSON.stringify({ titel: "Tiramisu", zutaten: [], schritte: [], kategorien: ["dessert", "snack", "Böse!"] }) });
+await call("/api/rezepte/katrez2", { method: "PUT", headers: { "content-type": "application/json" }, body: JSON.stringify({ titel: "Brezel", zutaten: [], schritte: [], kategorien: ["snack"] }) });
+ok((await call("/api/rezepte")).d.rezepte.find(x => x.id === "katrez1").kategorien.join() === "dessert,snack", "Rezept trägt Kategorien, ungültige id verworfen");
+const liste1 = [...k0.d.kategorien.filter(k => k.id !== "snack" && k.id !== "dessert"), { id: "dessert", name: "Nachtisch", emoji: "🍮", bild: katBild.d.id }, { name: "Grillen", emoji: "🔥" }, { name: "" }];
+const k1 = await call("/api/kategorien", { method: "PUT", headers: { "content-type": "application/json" }, body: JSON.stringify({ kategorien: liste1, umziehen: { snack: "vorspeise" } }) });
+const grill = k1.d?.kategorien?.find(k => k.name === "Grillen");
+ok(k1.d.kategorien.length === 8 && /^k-[a-z0-9]{8}$/.test(grill?.id) && k1.d.kategorien.find(k => k.id === "dessert").name === "Nachtisch", "umbenannt, neue Kategorie bekommt id, leere verworfen");
+const nach = (await call("/api/rezepte")).d.rezepte;
+ok(nach.find(x => x.id === "katrez1").kategorien.join() === "dessert,vorspeise" && nach.find(x => x.id === "katrez2").kategorien.join() === "vorspeise", "gelöschte Kategorie: Rezepte ziehen in die gewählte um");
+ok((await call("/api/kategorien")).d.kategorien.find(k => k.id === "dessert").bild === katBild.d.id, "Kategorien bleiben gespeichert, mit Bild");
+await call("/api/kategorien", { method: "PUT", headers: { "content-type": "application/json" }, body: JSON.stringify({ kategorien: k1.d.kategorien.filter(k => k.id !== "dessert") }) });
+ok((await call("/api/rezepte")).d.rezepte.find(x => x.id === "katrez1").kategorien.join() === "vorspeise", "ohne Umzug: Kategorie fällt nur weg, Rezept bleibt");
+ok(db0().prepare("SELECT COUNT(*) n FROM originale WHERE id = ?").get(katBild.d.id).n === 0, "Bild der gelöschten Kategorie ist weg");
+
+// Vorschaubild
+const vb = await call("/api/original/katrez2?typ=image%2Fpng&name=mein.png&vorschau=1", { method: "PUT", body: new Uint8Array(100) });
+const vbId = vb.d?.rezept?.vorschau;
+ok(/^[a-z0-9]{24}$/.test(vbId) && vb.d.rezept.originale[0].id === vbId, "Bild aus der Mediathek wird Vorschaubild");
+const stale = await call("/api/rezepte/katrez2", { method: "PUT", headers: { "content-type": "application/json" }, body: JSON.stringify({ titel: "Brezel", zutaten: [], schritte: [], originale: [], vorschau: vbId }) });
+ok(stale.d.rezept.originale.length === 1 && stale.d.rezept.vorschau === vbId, "Speichern behält die Originale vom Server, auch wenn das Handy eine alte Liste schickt");
+ok((await call("/api/rezepte/katrez2", { method: "PUT", headers: { "content-type": "application/json" }, body: JSON.stringify({ titel: "Brezel", zutaten: [], schritte: [], vorschau: "-" }) })).d.rezept.vorschau === "-", "„kein Bild“ wird gespeichert");
+ok(!("vorschau" in (await call("/api/rezepte/katrez2", { method: "PUT", headers: { "content-type": "application/json" }, body: JSON.stringify({ titel: "Brezel", zutaten: [], schritte: [], vorschau: "a".repeat(24) }) })).d.rezept), "Vorschau auf fremdes Bild verworfen");
+await call("/api/rezepte/katrez2", { method: "PUT", headers: { "content-type": "application/json" }, body: JSON.stringify({ titel: "Brezel", zutaten: [], schritte: [], vorschau: vbId }) });
+const del = await call("/api/original/katrez2/" + vbId, { method: "DELETE" });
+ok(del.d?.rezept?.originale?.length === 0 && !("vorschau" in del.d.rezept) && db0().prepare("SELECT COUNT(*) n FROM originale WHERE id = ?").get(vbId).n === 0, "Original löschen: Daten, Eintrag und Vorschau weg");
+ok((await call("/api/original/katrez1/" + vbId, { method: "DELETE" })).r.status === 404, "fremdes Original löschen: 404");
+WEB["https://yummix.example/gateau.jpg"] = () => new Response(new Uint8Array(300), { headers: { "content-type": "image/jpeg" } });
+WEB["https://yummix.example/seite.html"] = () => new Response("<html>", { headers: { "content-type": "text/html" } });
+const vu = await call("/api/original-url/katrez2?url=" + encodeURIComponent("https://yummix.example/gateau.jpg") + "&vorschau=1", { method: "PUT" });
+ok(vu.d?.rezept?.originale?.[0]?.name === "gateau.jpg" && vu.d.rezept.vorschau === vu.d.rezept.originale[0].id, "Bild der Webseite geholt und als Vorschau gesetzt");
+ok((await call("/api/original-url/katrez2?url=" + encodeURIComponent("https://yummix.example/seite.html"), { method: "PUT" })).r.status === 415, "Adresse ohne Bild: 415");
+ok((await call("/api/original-url/katrez2?url=ftp%3A%2F%2Fx", { method: "PUT" })).r.status === 400, "keine http-Adresse: 400");
 
 // Gegenprobe: saeubern ohne Prüfung würde Mengen ohne Zahl durchlassen
 ok(W.saeubern({ titel: "x", zutaten: [{ name: "a", menge: "viel" }], schritte: [] }).zutaten[0].menge === null, "Text als Menge wird null");

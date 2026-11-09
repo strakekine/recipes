@@ -163,7 +163,57 @@ Klick auf „Rezept machen“ (vor dem ersten `await`): `<video>` stumm, `playsi
 mitgespeichert wird oder **warum nicht** („Video lädt nicht“, „Springen klappt nicht“, „nur schwarze Bilder, Anspielen
 gesperrt“ …) — beim nächsten Fehlschlag am iPhone diesen Text erfragen.
 
-## Memo vom Nutzer, für später (08.11.2026)
+## Link, Kategorien, Vorschaubild, Küchenmodus (09.11.2026, App Fassung „09.11.2026 a“, Worker „09.11.2026 a“ — **Worker neu einfügen nötig**)
+
+Vom Nutzer: „mach einfach alles zusammen jetzt“ (Memo-Punkte 1, 4, 5, 6). Suche (2) und „von Hand eingeben“ (3) bewusst
+nicht angefasst — erst fragen, was fehlt.
+
+**Rezept aus einem Link** (Befund yummix: Gemini baute das Rezept aus dem Namen nach, ohne Mengen). Der Worker holt die
+Seite jetzt selbst (`seiteLesen`, iPhone-User-Agent, 15 s): zuerst schema.org/Recipe aus JSON-LD (`rezeptAusLd`, auch in
+`@graph`/`mainEntity`; `ldAlsText` mit Zutaten, HowToSection, Ergibt, Zeit; HTML-Entities aufgelöst), sonst Seitentext ohne
+Skripte/Menüs (`seitenText`, 40 000 Zeichen). Das geht als Zusatz an den Auftrag; der Auftrag verbietet ausdrücklich, ein
+Rezept aus einem bloßen Link/Namen nachzubauen. **Nur ein Link und die Seite ist nicht lesbar** (403, keine Webseite, fast
+leer) → 422 mit „Screenshot oder Rezepttext einfügen“, kein KI-Aufruf, kein Import gezählt. **Nur ein Instagram/Facebook/
+TikTok/Threads-Link** (`SOZIAL`) → 422 „Bildschirmaufnahme“. „Nur Link“ = keine Datei, kein YouTube, weniger als 40 Zeichen
+Text neben den Links. Das Bild der Seite (`image` aus JSON-LD, sonst `og:image`) kommt als `rezept.bild_url` mit; die App
+bietet es als Vorschaubild an und lässt es nach dem Speichern vom Worker holen (`PUT /api/original-url/<rezept>?url=&vorschau=1`,
+nur JPEG/PNG/WebP, 2 MB). **Am echten yummix-Link noch nicht geprüft** — die Seite ist in der Claude-Umgebung gesperrt
+(403 am Proxy); erster Test beim Nutzer. Protokoll zeigt „Seite gelesen (Rezeptdaten|Seitentext)“ bzw. „✗ Seite nicht lesbar“.
+
+**Kategorien:** gemeinsame Liste auf dem Server (Tabelle `einstellungen`, Schlüssel `kategorien`; ohne Eintrag
+`STANDARD_KATEGORIEN`: Vorspeise, Hauptgericht, Beilage, Dessert, Backen, Snack, Getränk, Frühstück). Eintrag
+`{id, name, emoji, bild?}`, neue bekommen `k-<zufall>`. `GET/PUT /api/kategorien`; PUT mit `umziehen: {alteId: neueId}`.
+**Löschen einer Kategorie löscht nie Rezepte**: sie verlieren nur die Kategorie oder ziehen in die gewählte um (die App
+fragt in der Zeile, wohin). Kachelbilder über `PUT /api/kategorie-bild` (in `originale` mit `rezept = 'kategorie'`, werden
+beim Entfernen gelöscht). Rezept trägt `kategorien` (ids, bis 5); die KI schlägt beim Import 1–2 aus der Liste vor
+(unbekannte verworfen). App: **Startseite = Kacheln** („Alle Rezepte“, je Kategorie mit Anzahl, „Ohne Kategorie“ nur wenn
+nötig), Bild = eigenes Kachelbild, sonst Vorschaubild des zuletzt geänderten Rezepts, sonst Emoji. Tippen → Liste der
+Kategorie mit „‹ Kategorien“; Suche oben sucht immer über alle. Reiter „Rezepte“ nochmal tippen = zurück zu den Kacheln.
+„⚙️ Kategorien bearbeiten“ unter den Kacheln (Emoji, Name, 🖼️ Kachelbild, ↑ sortieren, ✕). Im Editor Kategorie-Knöpfe
+(mehrere möglich), im Rezept als Schildchen. `[hidden]{display:none!important}` steht global, weil `display:flex` sonst das
+`hidden` einer Zeile überstimmte.
+
+**Vorschaubild:** `rezept.vorschau` = id eines Fotos oder „-“ (kein Bild); ohne Angabe das erste Foto. Im Editor Abschnitt
+„Vorschaubild“ mit allen Fotos des Rezepts (✕ löscht eins sofort auf dem Server, `DELETE /api/original/<rezept>/<id>`),
+den Bildern aus dem gerade gemachten Import, dem Bild der Webseite, „Kein Bild“ und „📷 Aus Fotos“ (Mediathek, verkleinert,
+`PUT /api/original/…&vorschau=1`). Geht auch für alte Rezepte. **Originale verwaltet nur der Worker**: beim Speichern eines
+Rezepts behält er seine eigene Liste, was das Handy schickt, wird ignoriert (konnte veraltet sein); eine Vorschau auf ein
+fremdes Bild wird verworfen.
+
+**Küchenmodus** („👩‍🍳 Kochen“ im Rezept): Vollbild, ein Schritt groß, Wischen oder Zurück/Weiter, „🥕 Zutaten“ zum Abhaken
+(Mengen für die eingestellte Personenzahl). Zeiten im Schritt werden gelb markiert und als Timer-Knopf angeboten
+(`timerAus`: Minuten/Min./Stunden/Std./h/Sekunden, Spanne → kürzere Zeit). Timer laufen weiter beim Blättern und Schließen
+(Restzeit aus der Endzeit, stimmt auch nach iOS-Hintergrund), am Ende Piepton (WebAudio, nicht bei Stummschalter),
+Vibration, blinkende Zeile; außerhalb des Küchenmodus ein Hinweis. Zeilen werden je Sekunde nur nachgeführt, nicht neu
+gebaut (sonst ginge „Stopp“ verloren). Wake Lock, beim Zurückkommen neu angefordert. **Am iPhone noch nicht ausprobiert**
+(Wake Lock in Home-Bildschirm-Apps erst seit iOS 18.4 zuverlässig).
+
+**Tests** um alles das erweitert (Worker: Link mit Rezeptdaten/Seitentext/gesperrt/sozial/PDF, Kategorien samt Umzug und
+Kachelbild, Vorschau, Original löschen, Bild von Adresse; Logik: `timerAus`, `rezepteInKat`; Browser: Kacheln, Kategorie
+zuweisen, Bild aus Fotos, „Kein Bild“, ✕, Küchenmodus mit Timer, Kategorien bearbeiten mit Fokus-Prüfung und Umzug).
+Gegenproben: Seite nicht lesen, Umzug ignorieren, gewählte Vorschau ignorieren — schlagen jeweils an.
+
+## Memo vom Nutzer, für später (08.11.2026) — 1, 4, 5, 6 am 09.11. gebaut (siehe oben); offen: 2 und 3
 
 1. **Rezeptkategorien** (z. B. Vorspeise, Hauptgericht, Dessert, Backen; Filter in der Liste). Die KI könnte beim Import
    eine vorschlagen. **Vom Nutzer (09.11.): die Kategorien selbst sollen editierbar sein** (eigene anlegen, umbenennen,

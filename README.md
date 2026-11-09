@@ -1,6 +1,6 @@
 # Recipes
 
-Rezepte aus PDF, Screenshot, Foto oder Reel per KI auseinandernehmen, für beliebig viele Personen umrechnen und
+Rezepte aus PDF, Screenshot, Foto, Reel oder Link zu einer Rezeptseite per KI auseinandernehmen, in Kategorien ablegen, im Küchenmodus nachkochen, für beliebig viele Personen umrechnen und
 die Einkaufsliste an Bring! schicken.
 
 **App:** https://strakekine.github.io/recipes/ — in Safari öffnen, Familien-Code eingeben, dann

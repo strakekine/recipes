@@ -32,6 +32,7 @@ globalThis.fetch = async (u, o) => {
 };
 
 let fehler = 0;
+const zuAllen = async () => { await p.waitForSelector(".kachel.alle"); await p.click(".kachel.alle"); await p.waitForSelector("#liste .li"); };
 const ok = (x, t) => { console.log((x ? "✓ " : "✗ ") + t); if(!x) fehler++; };
 
 const br = await chromium.launch();
@@ -58,7 +59,10 @@ await p.waitForSelector("#codeK", { state: "hidden" }); ok(true, "richtiger Code
 ok((await p.textContent("#liste")).includes("Noch keine Rezepte"), "leere Liste mit Hinweis");
 
 // Neu per KI → Vorschau → Speichern
-await p.click("#neuBtn"); await p.fill("#text", "Rezept aus dem Reel https://www.facebook.com/share/r/abc");
+await p.click("#neuBtn"); await p.fill("#text", "https://www.facebook.com/share/r/abc");
+await p.click("#los"); await p.waitForSelector("#stand .f");
+ok((await p.textContent("#stand")).includes("Bildschirmaufnahme"), "nur Facebook-Link: Hinweis auf Bildschirmaufnahme statt erfundenem Rezept");
+await p.fill("#text", "Gnocchi in der Pfanne braten, dann Sahne dazu und kurz köcheln. https://www.facebook.com/share/r/abc");
 await p.click("#los"); await p.waitForSelector("#vEdit:not([hidden])");
 ok(await p.inputValue("#eTitel") === "Cremige Gnocchi", "KI-Ergebnis landet in der Vorschau");
 const zeilen = await p.$$eval("#zutEd .zr", ds => ds.map(d => d.classList.contains("gr") ? "## " + d.querySelector(".zn").value : [d.querySelector(".zm").value, d.querySelector("select").value, d.querySelector(".zn").value].join("|")));
@@ -115,15 +119,83 @@ ok(bringHtml.includes("Klopapier") && bringHtml.includes("1 kg Gnocchi") && !bri
 
 // Neu laden: Liste aus dem Server, Einkauf aus dem Handy
 await p.goto(APP);
-await p.waitForSelector("#liste .li");
+await p.waitForSelector(".kachel.alle");
+ok((await p.textContent(".kachel.alle")).includes("1 Rezept") && await p.locator(".kachel").count() === 10 && (await p.textContent(".kachel.ohne")).includes("Ohne Kategorie"), "Startseite: Kacheln „Alle Rezepte“, 8 Kategorien, „Ohne Kategorie“");
+await zuAllen();
 ok((await p.textContent("#liste")).includes("Cremige Gnocchi") && (await p.textContent("#liste")).includes("für 2 Kräcker"), "nach Neuladen: Rezept da, „für 2 Kräcker“");
 ok((await p.textContent("#ekZahl")) === "3", "nach Neuladen: Einkaufsliste da");
-if(BILD){ await p.click("#liste .li"); await p.click("#bearb"); await p.screenshot({ path: BILD + "/bearbeiten.png", fullPage: true }); await p.click("[data-zurueck] >> nth=1"); await p.click("#tR"); }
+if(BILD){ await p.click("#liste .li"); await p.click("#bearb"); await p.screenshot({ path: BILD + "/bearbeiten.png", fullPage: true }); await p.click("#vEdit [data-zurueck] >> nth=0"); await p.click("#tR"); }
 // Suche tippen ohne Fokusverlust
 await p.click("#suche"); await p.type("#suche", "sahne", { delay: 30 });
 ok(await p.evaluate(() => document.activeElement.id) === "suche" && (await p.textContent("#liste")).includes("Gnocchi"), "Suche nach Zutat, Fokus bleibt");
 await p.fill("#suche", "lachs"); ok((await p.textContent("#liste")).includes("Nichts gefunden"), "Suche ohne Treffer");
 await p.fill("#suche", "");
+
+
+// Kategorie zuweisen → Kachel
+await p.click("#liste .li:has-text('Gnocchi')"); await p.click("#bearb");
+await p.click("#eKats button:has-text('Hauptgericht')");
+ok(await p.locator("#eKats button.on").count() === 1, "Kategorie im Editor angetippt");
+// Vorschaubild aus den Fotos
+await p.setInputFiles("#eBildDatei", { name: "foto.png", mimeType: "image/png", buffer: Buffer.from("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==", "base64") });
+await p.waitForSelector("#eBild .bw.on img");
+ok(await p.locator("#eBild .bw").count() === 3, "Bildwahl: neues Foto, „Kein Bild“, „Aus Fotos“");
+await p.click("#eSpeichern"); await p.waitForSelector("#vRezept:not([hidden]) .pill");
+ok((await p.textContent("#vRezept .pills")).includes("Hauptgericht"), "Rezept zeigt seine Kategorie");
+const gn = JSON.parse(await p.evaluate(() => JSON.stringify(REZEPTE.find(r => r.titel === "Cremige Gnocchi"))));
+ok(gn.originale.length === 1 && gn.vorschau === gn.originale[0].id && gn.kategorien.join() === "hauptgericht", "Foto aus der Mediathek gespeichert und als Vorschaubild gesetzt");
+await p.click("#tR"); await p.click("#tR");
+ok(await p.locator(".kachel.ohne").count() === 0 && (await p.textContent(".kachel:has-text('Hauptgericht')")).includes("1 Rezept"), "Kachel zählt das Rezept, „Ohne Kategorie“ verschwindet");
+ok(await p.locator(".kachel:has-text('Hauptgericht') img").count() === 1, "Kachel zeigt das Bild des Rezepts");
+if(BILD) await p.screenshot({ path: BILD + "/kacheln.png", fullPage: true });
+await p.click(".kachel:has-text('Hauptgericht')");
+ok((await p.textContent("#liste")).includes("Cremige Gnocchi") && (await p.textContent("#liste h2")).includes("Hauptgericht"), "Kachel öffnet die Rezepte der Kategorie");
+await p.click(".kachel >> nth=0").catch(() => {});
+await p.click("#katZur"); await p.click(".kachel:has-text('Dessert')");
+ok((await p.textContent("#liste")).includes("Noch keine Rezepte in dieser Kategorie"), "leere Kategorie mit Hinweis");
+await p.click("#katZur");
+// „Kein Bild“ wählen, dann das Foto löschen
+await p.click(".kachel.alle"); await p.click("#liste .li:has-text('Gnocchi')"); await p.click("#bearb");
+await p.click("#eBild .bw:has-text('Kein')"); await p.click("#eSpeichern"); await p.waitForSelector("#vRezept:not([hidden]) h2");
+await p.click("#zur");
+ok(await p.locator("#liste .li:has-text('Gnocchi') .icon img").count() === 0, "„Kein Bild“: kein Vorschaubild in der Liste");
+await p.click("#liste .li:has-text('Gnocchi')"); await p.click("#bearb");
+await p.click("#eBild .bx"); await p.waitForFunction(() => !document.querySelector("#eBild .bx"));
+ok(JSON.parse(await p.evaluate(() => JSON.stringify(REZEPTE.find(r => r.titel === "Cremige Gnocchi")))).originale.length === 0, "✕ löscht das Bild auf dem Server");
+await p.click("#vEdit [data-zurueck] >> nth=0");
+// Küchenmodus
+await p.click("#kochen");
+ok(await p.isVisible("#kueche") && (await p.textContent("#kSchritt")).includes("Gnocchi braten") && (await p.textContent("#kPos")) === "1 / 2", "Küchenmodus: Schritt 1 groß");
+await p.click("#kNach");
+ok((await p.textContent("#kSchritt mark")) === "5 Minuten" && (await p.textContent("#kTimerKnopf")).includes("5 min starten") && (await p.textContent("#kNach")).includes("Fertig"), "Schritt 2: Zeit markiert, Timer-Knopf");
+await p.click("#kTimerKnopf button");
+ok(/^[45]:\d\d$/.test(await p.textContent("#kTimer .tl b")), "Timer läuft");
+await p.evaluate(() => { TIMER[0].ende = Date.now() - 100; });
+await p.waitForSelector("#kTimer .tl.fertig");
+ok((await p.textContent("#kTimer")).includes("fertig"), "Timer meldet „fertig“");
+await p.click("#kTimer button"); ok(await p.locator("#kTimer .tl").count() === 0, "Timer weggetippt");
+await p.click("#kZut"); await p.click("#kZutBox label >> nth=0");
+ok(await p.locator("#kZutBox label.ok").count() === 1 && (await p.textContent("#kZutBox")).includes("500 g Gnocchi"), "Zutaten abhaken, mit Mengen");
+if(BILD) await p.screenshot({ path: BILD + "/kueche.png" });
+await p.click("#kZu"); ok(!(await p.isVisible("#kueche")), "Küchenmodus geschlossen");
+await p.click("#zur"); await p.click("#katZur");
+// Kategorien bearbeiten: umbenennen (Tippen ohne Fokusverlust), neu, leere löschen, volle mit Umzug löschen
+await p.click("#katBearb");
+const vs = p.locator("#katEd .kr:has(input[value='Vorspeise']) .kn");
+await vs.click(); await vs.press("End"); await p.keyboard.type("n", { delay: 30 });
+ok(await p.evaluate(() => document.activeElement.value) === "Vorspeisen", "umbenennen: Fokus bleibt");
+await p.click("#katEd .kr:has(input[value='Dessert']) .x");
+await p.click("#katEd .kr:has(input[value='Hauptgericht']) .x");
+await p.selectOption("#katEd .kr.weg select", { label: "Snack" }); await p.click("#katEd .kr.weg button:has-text('Löschen')");
+await p.click("#katPlus"); await p.keyboard.type("Grillen");
+await p.locator("#katEd .kr").last().locator(".ke").fill("🔥");
+if(BILD) await p.screenshot({ path: BILD + "/kategorien.png", fullPage: true });
+ok(!(await p.isVisible("#katEd .kr:has(input[value='Hauptgericht']) .kn")), "gelöschte Zeile verschwindet");
+await p.click("#katSpeichern"); await p.waitForSelector("#vListe:not([hidden]) .kacheln");
+const kt = await p.textContent("#liste");
+ok(kt.includes("Vorspeisen") && kt.includes("Grillen") && !kt.includes("Dessert") && !kt.includes("Hauptgericht"), "Kategorien gespeichert: umbenannt, neu, gelöscht");
+ok((await p.textContent(".kachel:has-text('Snack')")).includes("1 Rezept"), "Rezept der gelöschten Kategorie ist zu „Snack“ umgezogen");
+await p.click(".kachel.alle");
 
 // Foto-Import: Original wird mitgespeichert, Vorschaubild in der Liste
 await p.route("https://generativelanguage.googleapis.com/**", r => r.fulfill({ status: 200, headers: { "access-control-allow-origin": "*", "content-type": "application/json" },
@@ -177,7 +249,7 @@ await p.click("#neuBtn"); await p.fill("#text", "Nur Text"); await p.click("#los
 await p.fill("#eTitel", "Nur Text"); await p.click("#eSpeichern"); await p.waitForSelector("#vRezept:not([hidden]) h2");
 ok(await p.locator("#vRezept a:has-text('📄')").count() === 0, "Text-Import ohne Original");
 if(BILD) { await p.click("#zur"); await p.screenshot({ path: BILD + "/liste.png", fullPage: true }); }
-await p.goto(APP); await p.waitForSelector("#liste .li");
+await p.goto(APP); await zuAllen();
 for(const t of ["Croustillants", "Nur Text"]){ await p.click(`#liste .li:has-text('${t}')`); await p.click("#loesch"); await p.waitForSelector("#vListe:not([hidden])"); }
 
 // Löschen
