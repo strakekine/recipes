@@ -682,12 +682,36 @@ async function rezepte(env, request, id){
     /* Originale verwaltet nur der Worker (anhängen/löschen); was das Handy mitschickt, kann veraltet sein. */
     r.originale = alt?.originale || [];
     if(r.vorschau && r.vorschau !== "-" && !r.originale.some(o => o.id === r.vorschau)) delete r.vorschau;
+    /* Sterne, „gekocht“ und Kochliste ändert nur /api/bewerten — beim Speichern des Rezepts bleiben sie, wie sie sind. */
+    for(const k of ["sterne", "gekocht", "merken"]) if(alt?.[k] != null) r[k] = alt[k]; else delete r[k];
     const daten = { ...r, id, erstellt: alt?.erstellt || jetzt, geaendert: jetzt };
     await db.prepare("INSERT INTO rezepte (id, daten, geaendert) VALUES (?, ?, ?) ON CONFLICT(id) DO UPDATE SET daten = excluded.daten, geaendert = excluded.geaendert")
       .bind(id, JSON.stringify(daten), jetzt).run();
     return json({ rezept: daten });
   }
   return fehler("Methode nicht erlaubt.", 405);
+}
+
+/* ---------- Sterne, gekocht, Kochliste (vom Nutzer, 09.11.2026) ----------
+   Eine Bewertung für die ganze Familie. Eigener Weg statt des ganzen Rezepts: so überschreibt ein Handy mit altem
+   Stand nichts, und „geaendert“ bleibt (sonst sprängen Rezepte in der Liste nach oben und tauschten das Kachelbild).
+   Körper: { sterne: 0–5 (0 = weg), gekocht: true (heute dazu) | false (letzten Eintrag zurücknehmen), merken: true|false } */
+export const GEKOCHT_MAX = 100;
+async function bewerten(env, request, rid){
+  const db = env.DB, e = await request.json().catch(() => null);
+  if(!e || typeof e !== "object") return fehler("Kein gültiger Auftrag.", 400);
+  const r = await rezeptHolen(db, rid);
+  if(!r) return fehler("Rezept nicht gefunden.", 404);
+  if("sterne" in e){
+    if(!Number.isInteger(e.sterne) || e.sterne < 0 || e.sterne > 5) return fehler("Sterne: 0 bis 5.", 400);
+    if(e.sterne) r.sterne = e.sterne; else delete r.sterne;
+  }
+  if(e.gekocht === true){ r.gekocht = [...(Array.isArray(r.gekocht) ? r.gekocht : []), Date.now()].slice(-GEKOCHT_MAX); delete r.merken; }
+  if(e.gekocht === false && Array.isArray(r.gekocht)){ r.gekocht = r.gekocht.slice(0, -1); if(!r.gekocht.length) delete r.gekocht; }
+  if(e.merken === true) r.merken = Date.now();
+  if(e.merken === false) delete r.merken;
+  await db.prepare("UPDATE rezepte SET daten = ? WHERE id = ?").bind(JSON.stringify(r), rid).run();
+  return json({ rezept: r });
 }
 
 /* ---------- Eingang ---------- */
@@ -751,6 +775,8 @@ export default {
       if(od && request.method === "DELETE") return mit(await originalLoeschen(env, od[1], od[2]));
       if(url.pathname === "/api/kategorien") return mit(await kategorien(env, request));
       if(url.pathname === "/api/kategorie-bild" && request.method === "PUT") return mit(await kategorieBild(env, request, url));
+      const bw = url.pathname.match(/^\/api\/bewerten\/([\w-]{6,40})$/);
+      if(bw && request.method === "POST") return mit(await bewerten(env, request, bw[1]));
       const m = url.pathname.match(/^\/api\/rezepte(?:\/([^/]+))?$/);
       if(m) return mit(await rezepte(env, request, m[1]));
       return mit(fehler("Nicht gefunden.", 404));
@@ -787,7 +813,7 @@ label.file{display:block;border:2px dashed var(--l);border-radius:12px;padding:1
 <div class="k" id="ergebnis" hidden></div>
 <div class="k"><b>Gespeichert</b><div id="liste" class="s">–</div></div>
 <details class="k" id="protK"><summary><b>Protokoll</b> <span class="s">(was der Worker zuletzt gemacht hat)</span></summary><div id="prot" class="s">–</div></details>
-<div class="s" style="text-align:center">Fassung 09.11.2026 a</div>
+<div class="s" style="text-align:center">Fassung 09.11.2026 b</div>
 </main><script>
 const $=id=>document.getElementById(id);
 let CODE="";try{CODE=localStorage.getItem("recipes_code")||""}catch{}

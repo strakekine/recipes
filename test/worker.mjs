@@ -331,6 +331,23 @@ ok(vu.d?.rezept?.originale?.[0]?.name === "gateau.jpg" && vu.d.rezept.vorschau =
 ok((await call("/api/original-url/katrez2?url=" + encodeURIComponent("https://yummix.example/seite.html"), { method: "PUT" })).r.status === 415, "Adresse ohne Bild: 415");
 ok((await call("/api/original-url/katrez2?url=ftp%3A%2F%2Fx", { method: "PUT" })).r.status === 400, "keine http-Adresse: 400");
 
+
+// Sterne, gekocht, Kochliste
+const bwr = (b) => call("/api/bewerten/katrez1", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(b) });
+const vorBw = (await call("/api/rezepte")).d.rezepte.find(x => x.id === "katrez1").geaendert;
+let bw = await bwr({ merken: true });
+ok(typeof bw.d?.rezept?.merken === "number", "auf die Kochliste");
+bw = await bwr({ gekocht: true, sterne: 4 });
+ok(bw.d.rezept.sterne === 4 && bw.d.rezept.gekocht.length === 1 && !("merken" in bw.d.rezept), "gekocht + 4 Sterne, von der Kochliste genommen");
+ok((await call("/api/rezepte")).d.rezepte.find(x => x.id === "katrez1").geaendert === vorBw, "Bewerten ändert „geaendert“ nicht (Liste springt nicht)");
+await bwr({ gekocht: true });
+ok((await bwr({ gekocht: false })).d.rezept.gekocht.length === 1, "letzten Eintrag zurücknehmen");
+ok((await bwr({ sterne: 7 })).r.status === 400 && (await bwr({ sterne: 2.5 })).r.status === 400, "nur ganze Sterne 0–5");
+const nachBw = await call("/api/rezepte/katrez1", { method: "PUT", headers: { "content-type": "application/json" }, body: JSON.stringify({ titel: "Tiramisu", zutaten: [], schritte: [], sterne: 1, gekocht: [], merken: 5 }) });
+ok(nachBw.d.rezept.sterne === 4 && nachBw.d.rezept.gekocht.length === 1 && !("merken" in nachBw.d.rezept), "Speichern des Rezepts lässt Sterne/gekocht/Kochliste vom Server stehen");
+ok(!("sterne" in (await bwr({ sterne: 0 })).d.rezept), "Sterne 0 = Bewertung weg");
+ok((await call("/api/bewerten/gibtsnicht", { method: "POST", headers: { "content-type": "application/json" }, body: "{}" })).r.status === 404, "unbekanntes Rezept: 404");
+
 // Gegenprobe: saeubern ohne Prüfung würde Mengen ohne Zahl durchlassen
 ok(W.saeubern({ titel: "x", zutaten: [{ name: "a", menge: "viel" }], schritte: [] }).zutaten[0].menge === null, "Text als Menge wird null");
 

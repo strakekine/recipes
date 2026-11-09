@@ -107,6 +107,16 @@ details summary{cursor:pointer;color:var(--m)}
 .bw img{width:100%;height:100%;object-fit:cover;display:block}
 .bw.on{border-color:var(--lime);box-shadow:3px 3px 0 var(--kante)}
 .bw .bx{position:absolute;top:2px;right:2px;width:24px;height:24px;border-radius:50%;background:var(--kante);color:#fff;font-size:12px;line-height:24px;text-align:center}
+/* Sterne und Kochliste */
+.sterne{display:inline-flex;gap:2px}
+.sterne button{background:none;border:0;box-shadow:none;font-size:32px;line-height:1;color:var(--l);padding:0 2px}
+.sterne button.on{color:var(--gelb)}
+.sterne button:active{transform:scale(.9)}
+#kSterne{display:flex}#kSterne button{font-size:46px}
+.bew{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-top:10px}
+button.g.merkt{background:var(--pink);color:#fff;border-color:var(--kante);box-shadow:3px 3px 0 var(--kante)}
+.kachel.merk .bild{background:var(--pink)}
+.gold{color:var(--gelb)}
 /* Küchenmodus */
 #kueche{position:fixed;inset:0;z-index:40;background:var(--bg);overflow-y:auto;-webkit-overflow-scrolling:touch}
 #kueche .in{max-width:680px;margin:0 auto;padding:12px 16px 30px;min-height:100%;display:flex;flex-direction:column}
@@ -218,7 +228,7 @@ details summary{cursor:pointer;color:var(--m)}
 <script>
 /* ==== Logik ==== (kein DOM; test/rezepte.mjs schneidet diesen Block aus) */
 const WORKER = "https://recipes.rjtp6r9s9h.workers.dev";
-const FASSUNG = "09.11.2026 a";
+const FASSUNG = "09.11.2026 b";
 const GAENGE = ["Obst & Gemüse", "Brot & Backwaren", "Kühlregal", "Fleisch & Fisch", "Tiefkühl",
   "Nudeln, Reis & Trockenes", "Konserven & Gläser", "Gewürze, Öl & Saucen", "Backzutaten", "Getränke", "Sonstiges"];
 const EINHEITEN = ["g", "kg", "ml", "l", "EL", "TL", "Prise", "Msp", "Stück", "Dose", "Bund", "Zehe", "Becher", "Pck", "Scheibe", "Handvoll"];
@@ -402,6 +412,7 @@ function sucheTrifft(r, q){
 /* Kategorien: "alle", "ohne" (keine bekannte Kategorie) oder eine id */
 function rezepteInKat(rezepte, kat, katIds){
   if(kat === "alle") return rezepte;
+  if(kat === "merken") return rezepte.filter(r => r.merken).sort((a, b) => a.merken - b.merken);   // älteste Idee zuerst
   if(kat === "ohne") return rezepte.filter(r => !(r.kategorien || []).some(k => katIds.includes(k)));
   return rezepte.filter(r => (r.kategorien || []).includes(kat));
 }
@@ -420,6 +431,14 @@ function timerAus(text){
   }
   return aus;
 }
+const datumKurz = t => new Date(t).toLocaleDateString("de-DE", { day: "2-digit", month: "2-digit" });
+function gekochtText(r, jetzt = Date.now()){
+  const g = Array.isArray(r.gekocht) ? r.gekocht : [];
+  if(!g.length) return "Noch nie gekocht";
+  const zuletzt = g[g.length - 1], heute = new Date(jetzt).toDateString() === new Date(zuletzt).toDateString();
+  return g.length + "× gekocht, zuletzt " + (heute ? "heute" : datumKurz(zuletzt));
+}
+const heuteGekocht = (r, jetzt = Date.now()) => Array.isArray(r.gekocht) && r.gekocht.length > 0 && new Date(r.gekocht[r.gekocht.length - 1]).toDateString() === new Date(jetzt).toDateString();
 const uhrText = s => { s = Math.max(0, Math.ceil(s)); const h = Math.floor(s / 3600), m = Math.floor(s % 3600 / 60), x = s % 60;
   return (h ? h + ":" + String(m).padStart(2, "0") : m) + ":" + String(x).padStart(2, "0"); };
 /* ==== Oberfläche ==== */
@@ -483,7 +502,7 @@ document.querySelectorAll("[data-zurueck]").forEach(b => b.onclick = () => {
 /* ---- Liste: Kacheln je Kategorie (vom Nutzer gewünscht), Tippen öffnet die Rezepte der Kategorie ---- */
 function rezeptZeile(r){
   return `<div class="li" data-id="${esc(r.id)}"><div class="icon">${vorschau(r) ? `<img src="${esc(vorschau(r))}" alt="" loading="lazy">` : r.quelle && /facebook|instagram|tiktok|youtu/i.test(r.quelle) ? "🎬" : "🍽️"}</div>
-      <div><b>${esc(r.titel)}</b><span class="s">${r.zutaten.length} Zutaten${r.zeit_min ? " · " + r.zeit_min + " min" : ""}${r.portionen ? " · für " + r.portionen + " " + esc(portionWort(r)) : ""}</span></div></div>`;
+      <div><b>${esc(r.titel)}</b><span class="s">${r.zutaten.length} Zutaten${r.zeit_min ? " · " + r.zeit_min + " min" : ""}${r.portionen ? " · für " + r.portionen + " " + esc(portionWort(r)) : ""}${r.sterne ? ' · <span class="gold">' + "★".repeat(r.sterne) + "</span>" : ""}${r.merken ? " · 🔖" : ""}</span></div></div>`;
 }
 function liste(){
   const q = $("suche").value.trim(), ids = KATS.map(k => k.id), box = $("liste");
@@ -494,9 +513,9 @@ function liste(){
   if(q || KAT){
     const treffer = (q ? REZEPTE : rezepteInKat(REZEPTE, KAT, ids)).filter(r => sucheTrifft(r, q));
     const k = KATS.find(x => x.id === KAT);
-    const kopf = q ? "" : `<button class="zurueck" id="katZur">‹ Kategorien</button><h2 style="margin-top:4px">${esc(KAT === "alle" ? "Alle Rezepte" : KAT === "ohne" ? "Ohne Kategorie" : k ? katName(k) : "")}</h2>`;
+    const kopf = q ? "" : `<button class="zurueck" id="katZur">‹ Kategorien</button><h2 style="margin-top:4px">${esc(KAT === "alle" ? "Alle Rezepte" : KAT === "ohne" ? "Ohne Kategorie" : KAT === "merken" ? "🔖 Möchte ich kochen" : k ? katName(k) : "")}</h2>`;
     box.innerHTML = kopf + (treffer.length ? treffer.map(rezeptZeile).join("")
-      : '<div class="leer s">' + (q ? "Nichts gefunden." : "Noch keine Rezepte in dieser Kategorie.<br>Im Rezept auf ✎ Bearbeiten tippen und die Kategorie antippen.") + "</div>");
+      : '<div class="leer s">' + (q ? "Nichts gefunden." : KAT === "merken" ? "Die Kochliste ist leer.<br>Im Rezept auf <b>🔖 Möchte ich kochen</b> tippen." : "Noch keine Rezepte in dieser Kategorie.<br>Im Rezept auf ✎ Bearbeiten tippen und die Kategorie antippen.") + "</div>");
     box.querySelectorAll(".li").forEach(el => el.onclick = () => { OFFEN = REZEPTE.find(r => r.id === el.dataset.id); PERS = OFFEN.portionen || 2; zeige("rezept"); });
     if($("katZur")) $("katZur").onclick = () => { KAT = null; liste(); window.scrollTo(0, 0); };
     return;
@@ -504,7 +523,8 @@ function liste(){
   const bildAus = rs => { for(const r of rs){ const v = vorschau(r); if(v) return v; } return ""; };   // neuestes Rezept zuerst
   const kachel = (kat, name, emoji, n, bild, cls = "") => `<button class="kachel ${cls}" data-kat="${esc(kat)}"><div class="bild">${bild ? `<img src="${esc(bild)}" alt="" loading="lazy">` : esc(emoji)}</div>
     <div class="unter"><b>${esc(name)}</b><span class="s">${n} Rezept${n === 1 ? "" : "e"}</span></div></button>`;
-  let h = kachel("alle", "Alle Rezepte", "📚", REZEPTE.length, "", "alle");
+  const merk = rezepteInKat(REZEPTE, "merken", ids);
+  let h = kachel("alle", "Alle Rezepte", "📚", REZEPTE.length, "", "alle") + kachel("merken", "Möchte ich kochen", "🔖", merk.length, bildAus(merk), "merk");
   for(const k of KATS){ const rs = rezepteInKat(REZEPTE, k.id, ids); h += kachel(k.id, k.name, k.emoji || "🍽️", rs.length, k.bild ? bildUrl({ id: k.bild }) : bildAus(rs)); }
   const ohne = rezepteInKat(REZEPTE, "ohne", ids);
   if(ohne.length && KATS.length) h += kachel("ohne", "Ohne Kategorie", "❔", ohne.length, "", "ohne");
@@ -606,6 +626,10 @@ function rezeptZeigen(){
         const stand = o.name === "standbild.jpg", echte = a.filter(x => x.name !== "standbild.jpg");
         return `<a href="${esc(bildUrl(o))}" target="_blank" rel="noopener">${stand ? "🖼️ Bild aus dem Video" : "📄 Original" + (echte.length > 1 ? " " + (echte.indexOf(o) + 1) : "") + " ansehen"}</a>`;
       })].filter(Boolean).join(" · ")}</div>
+    <div class="bew"><span class="sterne" id="sterne">${[1, 2, 3, 4, 5].map(n => `<button data-n="${n}" class="${n <= (r.sterne || 0) ? "on" : ""}" aria-label="${n} Sterne">★</button>`).join("")}</span>
+      <span class="s">${esc(gekochtText(r))}</span></div>
+    <div class="r"><button class="g klein ${r.merken ? "merkt" : ""}" id="merken">🔖 ${r.merken ? "Auf der Kochliste" : "Möchte ich kochen"}</button>
+      <button class="g klein" id="gekocht">${heuteGekocht(r) ? "✓ Heute gekocht ✔" : "✓ Heute gekocht"}</button></div>
     <div class="pz"><span id="pWort">${esc(portionWort(r))}</span> <button class="g" id="pm">−</button><b>${PERS}</b><button class="g" id="pp">+</button>
       ${r.portionen ? `<span class="s">(Rezept: ${r.portionen})</span>` : ""}</div>
     <div class="r"><button id="kochen">👩‍🍳 Kochen</button><button id="aufListe">🛒 Auf die Einkaufsliste</button><button class="g" id="direktBring">Direkt in Bring!</button></div>
@@ -626,11 +650,28 @@ function rezeptZeigen(){
   $("direktBring").onclick = () => bring(r.titel, r.zutaten.filter(z => !istVorrat(z.name, vorratListe(VORRAT))).map(z => [mengeText(z, f), z.name].filter(Boolean).join(" ")), "rStand");
   $("bearb").onclick = () => bearbeiten(r);
   $("kochen").onclick = () => kochen(r, f);
+  $("sterne").querySelectorAll("button").forEach(b => b.onclick = () => { const n = +b.dataset.n; bewerten(r, { sterne: n === r.sterne ? 0 : n }); });
+  $("merken").onclick = () => bewerten(r, { merken: !r.merken }, r.merken ? "Von der Kochliste genommen" : "🔖 Auf der Kochliste");
+  $("gekocht").onclick = () => {
+    if(heuteGekocht(r)){ if(confirm("Den Eintrag von heute zurücknehmen?")) bewerten(r, { gekocht: false }, "Zurückgenommen"); return; }
+    bewerten(r, { gekocht: true }, r.sterne ? "Eingetragen ✓" : "Eingetragen ✓ — wie war's? Sterne antippen");
+  };
   $("loesch").onclick = async () => {
     if(!confirm("„" + r.titel + "“ wirklich löschen?")) return;
     try { await api("/api/rezepte/" + encodeURIComponent(r.id), { method: "DELETE" }); REZEPTE = REZEPTE.filter(x => x.id !== r.id); schreib("recipes_rezepte", REZEPTE); OFFEN = null; zeige("liste"); toast("Gelöscht"); }
     catch(e){ $("rStand").innerHTML = '<span class="f">' + esc(e.message) + "</span>"; }
   };
+}
+
+/* Sterne, gekocht, Kochliste: eigener Weg beim Worker (/api/bewerten), ändert nur diese Felder. */
+async function bewerten(r, daten, meldung){
+  try {
+    const { d } = await api("/api/bewerten/" + encodeURIComponent(r.id), { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(daten) });
+    REZEPTE = REZEPTE.map(x => x.id === d.rezept.id ? d.rezept : x); schreib("recipes_rezepte", REZEPTE);
+    if(OFFEN?.id === d.rezept.id){ OFFEN = d.rezept; if(ANSICHT === "rezept") rezeptZeigen(); }
+    if(meldung) toast(meldung);
+    return true;
+  } catch(e){ toast(e.message); return false; }
 }
 
 /* ---- Bearbeiten / neu von Hand ---- */
@@ -958,7 +999,7 @@ async function bring(titel, zeilen, standId){
    stimmt also auch, wenn iOS die App im Hintergrund anhält. Ton nur, wenn der Stummschalter aus ist. */
 let K = null, TIMER = [], TAKT = null, WACH = null, AUDIO = null;
 function kochen(r, f){
-  K = { r, f, i: 0, ab: new Set() };
+  K = { r, f, i: 0, ab: new Set(), ende: false };
   $("kueche").hidden = false; document.body.style.overflow = "hidden"; $("kZutBox").hidden = true;
   kZutaten(); kZeigen(); kTimer(); wachHalten();
 }
@@ -968,6 +1009,7 @@ function kSchliessen(){
 }
 function kZeigen(){
   const n = K.r.schritte.length;
+  if(K.ende) return kEnde();
   $("kTitel").textContent = K.r.titel;
   $("kPos").textContent = n ? (K.i + 1) + " / " + n : "";
   const s = K.r.schritte[K.i] || "Dieses Rezept hat keine Schritte.";
@@ -1040,8 +1082,22 @@ async function wachHalten(){
 }
 $("kZu").onclick = kSchliessen;
 $("kZut").onclick = () => { $("kZutBox").hidden = !$("kZutBox").hidden; };
-$("kVor").onclick = () => { if(K.i > 0){ K.i--; kZeigen(); } };
-$("kNach").onclick = () => { if(K.i < K.r.schritte.length - 1){ K.i++; kZeigen(); } else kSchliessen(); };
+$("kVor").onclick = () => { if(K.ende){ K.ende = false; kZeigen(); } else if(K.i > 0){ K.i--; kZeigen(); } };
+$("kNach").onclick = () => { if(K.ende) return kSchliessen(); if(K.i < K.r.schritte.length - 1){ K.i++; } else K.ende = true; kZeigen(); };
+/* Nach dem letzten Schritt: als gekocht eintragen und gleich bewerten (das ist der Moment, in dem man es weiß). */
+function kEnde(){
+  const r = REZEPTE.find(x => x.id === K.r.id) || K.r, schon = heuteGekocht(r);
+  $("kPos").textContent = "Fertig";
+  $("kSchritt").innerHTML = `<span class="nr">Guten Appetit! 🎉</span>${schon ? "Heute schon als gekocht eingetragen." : "Wie war's?"}
+    <div class="sterne" id="kSterne" style="margin-top:14px">${[1, 2, 3, 4, 5].map(n => `<button data-n="${n}" class="${n <= (r.sterne || 0) ? "on" : ""}">★</button>`).join("")}</div>
+    <div class="s" style="margin-top:8px">${schon ? "Sterne antippen ändert die Bewertung." : "Stern antippen = gekocht eintragen und bewerten."}</div>`;
+  $("kTimerKnopf").innerHTML = schon ? "" : '<button class="g" id="kOhne">Nur als gekocht eintragen</button>';
+  $("kVor").disabled = false; $("kNach").textContent = "Schließen";
+  $("kSterne").querySelectorAll("button").forEach(b => b.onclick = async () => {
+    if(await bewerten(r, schon ? { sterne: +b.dataset.n } : { gekocht: true, sterne: +b.dataset.n }, "Eingetragen ✓ " + "★".repeat(+b.dataset.n))) kSchliessen();
+  });
+  if($("kOhne")) $("kOhne").onclick = async () => { if(await bewerten(r, { gekocht: true }, "Als gekocht eingetragen ✓")) kSchliessen(); };
+}
 /* Wischen zum Blättern */
 let WISCH = null;
 $("kSchritt").addEventListener("touchstart", e => { const t = e.touches[0]; WISCH = [t.clientX, t.clientY]; }, { passive: true });

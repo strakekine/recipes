@@ -3,7 +3,7 @@ import { readFileSync } from "node:fs";
 const html = readFileSync(new URL("../index.html", import.meta.url), "utf8");
 const a = html.indexOf("/* ==== Logik ===="), b = html.indexOf("/* ==== Oberfläche ====");
 if(a < 0 || b < 0) throw new Error("Marken Logik/Oberfläche nicht gefunden");
-const L = new Function(html.slice(a, b) + "; return { mengeLesen, mengeEingabe, zutatAusFeldern, istNachGeschmack, zeileLesen, mengeText, zeileAus, zutatenText, zutatenLesen, gangRaten, einkaufDazu, einkaufText, nachGang, istVorrat, vorratListe, sucheTrifft, zahlLesen, timerAus, uhrText, rezepteInKat };")();
+const L = new Function(html.slice(a, b) + "; return { mengeLesen, mengeEingabe, zutatAusFeldern, istNachGeschmack, zeileLesen, mengeText, zeileAus, zutatenText, zutatenLesen, gangRaten, einkaufDazu, einkaufText, nachGang, istVorrat, vorratListe, sucheTrifft, zahlLesen, timerAus, uhrText, rezepteInKat, gekochtText, heuteGekocht };")();
 
 let fehler = 0;
 const ok = (x, t) => { console.log((x ? "✓ " : "✗ ") + t); if(!x) fehler++; };
@@ -94,6 +94,13 @@ ok(L.uhrText(65) === "1:05" && L.uhrText(3725) === "1:02:05" && L.uhrText(-3) ==
 // Kategorien
 const RK = [{ id: "a", kategorien: ["x"] }, { id: "b", kategorien: ["x", "y"] }, { id: "c" }, { id: "d", kategorien: ["weg"] }];
 ok(L.rezepteInKat(RK, "x", ["x", "y"]).map(r => r.id).join() === "a,b" && L.rezepteInKat(RK, "ohne", ["x", "y"]).map(r => r.id).join() === "c,d" && L.rezepteInKat(RK, "alle", []).length === 4, "Rezepte je Kategorie, „ohne“ zählt unbekannte Kategorien mit");
+
+
+// Sterne, gekocht, Kochliste
+const T0 = new Date(2026, 10, 9, 18).getTime();
+ok(L.gekochtText({}) === "Noch nie gekocht" && L.gekochtText({ gekocht: [new Date(2026, 9, 3).getTime(), T0 - 3600e3] }, T0) === "2× gekocht, zuletzt heute", "gekocht-Text");
+ok(L.gekochtText({ gekocht: [new Date(2026, 9, 3).getTime()] }, T0) === "1× gekocht, zuletzt 03.10." && !L.heuteGekocht({ gekocht: [T0 - 86400e3] }, T0) && L.heuteGekocht({ gekocht: [T0] }, T0), "Datum, heute gekocht?");
+ok(L.rezepteInKat([{ id: "a", merken: 5 }, { id: "b" }, { id: "c", merken: 2 }], "merken", []).map(r => r.id).join() === "c,a", "Kochliste: älteste Idee zuerst");
 
 console.log(fehler ? `\n${fehler} Fehler` : "\nAlles grün");
 process.exit(fehler ? 1 : 0);

@@ -213,6 +213,19 @@ Kachelbild, Vorschau, Original löschen, Bild von Adresse; Logik: `timerAus`, `r
 zuweisen, Bild aus Fotos, „Kein Bild“, ✕, Küchenmodus mit Timer, Kategorien bearbeiten mit Fokus-Prüfung und Umzug).
 Gegenproben: Seite nicht lesen, Umzug ignorieren, gewählte Vorschau ignorieren — schlagen jeweils an.
 
+## Sterne, gekocht, Kochliste (09.11.2026, App und Worker Fassung „09.11.2026 b“ — **Worker neu einfügen nötig**)
+
+Vom Nutzer: Sterne, wenn gekocht; Knopf „möchte ich kochen“; eigene Kachel für „demnächst kochen“. **Eine Bewertung für
+die ganze Familie** (nicht je Person) und eine gemeinsame Kochliste — Claudes Festlegung, dem Nutzer so gesagt.
+Rezeptfelder `sterne` (1–5), `gekocht` (Zeitpunkte, höchstens 100), `merken` (Zeitpunkt). Geändert nur über
+`POST /api/bewerten/<id>` (`{sterne: 0–5, 0 = weg}`, `{gekocht: true}` = heute dazu und von der Kochliste,
+`{gekocht: false}` = letzten Eintrag zurück, `{merken: true|false}`); ändert `geaendert` nicht (sonst spränge das Rezept in
+der Liste nach oben und tauschte das Kachelbild). Beim Speichern des Rezepts (PUT) bleiben die Server-Werte stehen.
+App: im Rezept fünf Sterne (gleicher Stern nochmal = weg), „3× gekocht, zuletzt 03.10.“ (`gekochtText`), „🔖 Möchte ich
+kochen“ (pink = auf der Liste), „✓ Heute gekocht“ (nochmal = Eintrag von heute zurücknehmen, mit Nachfrage). Küchenmodus:
+nach dem letzten Schritt „Wie war's?“ — Stern antippen = gekocht eintragen + bewerten, oder „Nur als gekocht eintragen“.
+Kachel „🔖 Möchte ich kochen“ direkt nach „Alle Rezepte“, älteste Idee zuerst; Liste zeigt ★ und 🔖.
+
 ## Memo vom Nutzer, für später (08.11.2026) — 1, 4, 5, 6 am 09.11. gebaut (siehe oben); 2 und 3 vom Nutzer erledigt („wenn es sie gibt, ist so ok“, 09.11.) — nur bauen, wenn er etwas vermisst
 
 1. **Rezeptkategorien** (z. B. Vorspeise, Hauptgericht, Dessert, Backen; Filter in der Liste). Die KI könnte beim Import

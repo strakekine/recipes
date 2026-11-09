@@ -120,7 +120,7 @@ ok(bringHtml.includes("Klopapier") && bringHtml.includes("1 kg Gnocchi") && !bri
 // Neu laden: Liste aus dem Server, Einkauf aus dem Handy
 await p.goto(APP);
 await p.waitForSelector(".kachel.alle");
-ok((await p.textContent(".kachel.alle")).includes("1 Rezept") && await p.locator(".kachel").count() === 10 && (await p.textContent(".kachel.ohne")).includes("Ohne Kategorie"), "Startseite: Kacheln „Alle Rezepte“, 8 Kategorien, „Ohne Kategorie“");
+ok((await p.textContent(".kachel.alle")).includes("1 Rezept") && await p.locator(".kachel").count() === 11 && (await p.textContent(".kachel.merk")).includes("Möchte ich kochen") && (await p.textContent(".kachel.ohne")).includes("Ohne Kategorie"), "Startseite: Kacheln „Alle Rezepte“, „Möchte ich kochen“, 8 Kategorien, „Ohne Kategorie“");
 await zuAllen();
 ok((await p.textContent("#liste")).includes("Cremige Gnocchi") && (await p.textContent("#liste")).includes("für 2 Kräcker"), "nach Neuladen: Rezept da, „für 2 Kräcker“");
 ok((await p.textContent("#ekZahl")) === "3", "nach Neuladen: Einkaufsliste da");
@@ -131,6 +131,35 @@ ok(await p.evaluate(() => document.activeElement.id) === "suche" && (await p.tex
 await p.fill("#suche", "lachs"); ok((await p.textContent("#liste")).includes("Nichts gefunden"), "Suche ohne Treffer");
 await p.fill("#suche", "");
 
+
+
+// Sterne und Kochliste
+await p.click("#liste .li:has-text('Gnocchi')");
+ok((await p.textContent("#vRezept .bew")).includes("Noch nie gekocht"), "neues Rezept: noch nie gekocht");
+await p.click("#merken"); await p.waitForSelector("#merken.merkt");
+await p.click("#zur"); await p.click("#katZur");
+ok((await p.textContent(".kachel.merk")).includes("1 Rezept"), "Kachel „Möchte ich kochen“ zählt das Rezept");
+await p.click(".kachel.merk");
+ok((await p.textContent("#liste")).includes("Cremige Gnocchi") && (await p.textContent("#liste .li")).includes("🔖"), "Kochliste zeigt das Rezept mit 🔖");
+await p.click("#liste .li"); await p.click("#sterne button[data-n='3']");
+await p.waitForFunction(() => document.querySelectorAll("#sterne button.on").length === 3);
+ok(true, "3 Sterne gesetzt");
+await p.click("#sterne button[data-n='3']"); await p.waitForFunction(() => document.querySelectorAll("#sterne button.on").length === 0);
+ok(true, "derselbe Stern nochmal: Bewertung weg");
+// Küchenmodus bis zum Ende → Sterne → gekocht, von der Kochliste genommen
+await p.click("#kochen"); await p.click("#kNach"); await p.click("#kNach");
+ok((await p.textContent("#kSchritt")).includes("Wie war's"), "nach dem letzten Schritt: Wie war's?");
+if(BILD) await p.screenshot({ path: BILD + "/fertig.png" });
+await p.click("#kSterne button[data-n='5']"); await p.waitForSelector("#kueche", { state: "hidden" });
+const gb = JSON.parse(await p.evaluate(() => JSON.stringify(REZEPTE.find(r => r.titel === "Cremige Gnocchi"))));
+ok(gb.sterne === 5 && gb.gekocht.length === 1 && !gb.merken, "Küchenmodus: 5 Sterne, gekocht eingetragen, von der Kochliste");
+ok((await p.textContent("#vRezept .bew")).includes("1× gekocht, zuletzt heute") && (await p.textContent("#gekocht")).includes("✔"), "Rezept zeigt „1× gekocht, zuletzt heute“");
+await p.click("#gekocht"); await p.waitForFunction(() => document.querySelector("#vRezept .bew").textContent.includes("Noch nie"));
+ok(true, "„Heute gekocht“ nochmal: Eintrag zurückgenommen");
+if(BILD) await p.screenshot({ path: BILD + "/sterne.png" });
+await p.click("#zur");
+ok((await p.textContent("#liste")).includes("Die Kochliste ist leer"), "Kochliste danach leer");
+await p.click("#katZur"); await p.click(".kachel.alle");
 
 // Kategorie zuweisen → Kachel
 await p.click("#liste .li:has-text('Gnocchi')"); await p.click("#bearb");
