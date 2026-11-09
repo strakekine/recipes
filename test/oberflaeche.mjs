@@ -133,6 +133,17 @@ await p.fill("#suche", "");
 
 
 
+
+// Überschrift in der Zubereitung
+await p.click("#liste .li:has-text('Gnocchi')"); await p.click("#bearb");
+await p.fill("#eSchr", "Für die Gnocchi:\nGnocchi braten.\nSauce:\nSahne dazu, 5 Minuten köcheln.");
+await p.click("#eSpeichern"); await p.waitForSelector("#vRezept:not([hidden]) h2");
+const zub = await p.evaluate(() => [...document.querySelectorAll("#vRezept .grp, #vRezept ol.st")].map(e => e.matches("ol") ? e.start + ". " + e.innerText : "# " + e.innerText));
+ok(JSON.stringify(zub).includes('"# Für die Gnocchi","1. Gnocchi braten.","# Sauce","2. Sahne dazu, 5 Minuten köcheln."'), "Überschriften ohne Nummer, Schritte durchgezählt" + " → " + JSON.stringify(zub));
+await p.click("#kochen"); await p.click("#kNach");
+ok((await p.textContent("#kSchritt .nr")) === "Sauce · Schritt 2" && (await p.textContent("#kPos")) === "2 / 2", "Küchenmodus: Überschrift als Beschriftung, nicht als eigener Schritt");
+await p.click("#kZu"); await p.click("#zur");
+
 // Sterne und Kochliste
 await p.click("#liste .li:has-text('Gnocchi')");
 ok((await p.textContent("#vRezept .bew")).includes("Noch nie gekocht"), "neues Rezept: noch nie gekocht");

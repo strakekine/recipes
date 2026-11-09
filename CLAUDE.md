@@ -226,6 +226,16 @@ kochen“ (pink = auf der Liste), „✓ Heute gekocht“ (nochmal = Eintrag von
 nach dem letzten Schritt „Wie war's?“ — Stern antippen = gekocht eintragen + bewerten, oder „Nur als gekocht eintragen“.
 Kachel „🔖 Möchte ich kochen“ direkt nach „Alle Rezepte“, älteste Idee zuerst; Liste zeigt ★ und 🔖.
 
+## Überschriften in der Zubereitung (09.11.2026, App Fassung „09.11.2026 c“, nur App)
+
+Vom Nutzer gefragt: Überschrift im Rezept ohne Zahl davor. Gleiche Regel wie bei den Zutaten: **kurze Zeile (bis 60
+Zeichen) mit Doppelpunkt am Ende** = Überschrift (`istUeberschrift`, `schrittListe`), pink wie Zutatengruppen, ohne
+Nummer; Schritte werden **durchgehend** nummeriert (je Schritt ein `<ol start>`), damit „Schritt 4 von 7“ im
+Küchenmodus stimmt. Küchenmodus überspringt Überschriften und zeigt sie als Beschriftung („Sauce · Schritt 2“). Lange
+Sätze mit Doppelpunkt am Ende bleiben Schritte. Hinweis steht über dem Schritte-Feld im Editor. Gespeichert wird
+unverändert als Zeile in `schritte` — kein Worker-Umbau. Die KI liefert Abschnitte noch nicht so; bei Bedarf im
+`AUFTRAG` ergänzen (dann Worker neu einfügen).
+
 ## Memo vom Nutzer, für später (08.11.2026) — 1, 4, 5, 6 am 09.11. gebaut (siehe oben); 2 und 3 vom Nutzer erledigt („wenn es sie gibt, ist so ok“, 09.11.) — nur bauen, wenn er etwas vermisst
 
 1. **Rezeptkategorien** (z. B. Vorspeise, Hauptgericht, Dessert, Backen; Filter in der Liste). Die KI könnte beim Import

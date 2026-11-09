@@ -191,7 +191,7 @@ button.g.merkt{background:var(--pink);color:#fff;border-color:var(--kante);box-s
         <div class="r"><button class="g klein" id="zPlus">+ Zutat</button><button class="g klein" id="gPlus">+ Überschrift</button><button class="g klein" id="zText">Als Text bearbeiten</button></div>
         <div id="zTextBox" hidden><div class="s" style="margin:8px 0 4px">Eine Zutat je Zeile, Zahl vorne („200 g Mehl“). Zeile mit Doppelpunkt am Ende = Überschrift.</div><textarea id="eZut" style="min-height:200px"></textarea></div>
       </div>
-      <div style="margin-top:10px"><div class="s">Schritte — einer je Zeile</div><textarea id="eSchr" style="min-height:160px"></textarea></div>
+      <div style="margin-top:10px"><div class="s">Schritte — einer je Zeile. Zeile mit Doppelpunkt am Ende = Überschrift („Für den Teig:“)</div><textarea id="eSchr" style="min-height:160px"></textarea></div>
       <div style="margin-top:10px"><div class="s">Notiz</div><textarea id="eNotiz" style="min-height:60px"></textarea></div>
       <div style="margin-top:10px"><div class="s">Link zum Original</div><input type="text" id="eQuelle" inputmode="url"></div>
       <div style="margin-top:14px"><div class="s"><b>Vorschaubild</b> <span class="s">(antippen zum Auswählen)</span></div><div class="bilder" id="eBild"></div><div id="eBildS" class="s"></div>
@@ -228,7 +228,7 @@ button.g.merkt{background:var(--pink);color:#fff;border-color:var(--kante);box-s
 <script>
 /* ==== Logik ==== (kein DOM; test/rezepte.mjs schneidet diesen Block aus) */
 const WORKER = "https://recipes.rjtp6r9s9h.workers.dev";
-const FASSUNG = "09.11.2026 b";
+const FASSUNG = "09.11.2026 c";
 const GAENGE = ["Obst & Gemüse", "Brot & Backwaren", "Kühlregal", "Fleisch & Fisch", "Tiefkühl",
   "Nudeln, Reis & Trockenes", "Konserven & Gläser", "Gewürze, Öl & Saucen", "Backzutaten", "Getränke", "Sonstiges"];
 const EINHEITEN = ["g", "kg", "ml", "l", "EL", "TL", "Prise", "Msp", "Stück", "Dose", "Bund", "Zehe", "Becher", "Pck", "Scheibe", "Handvoll"];
@@ -428,6 +428,17 @@ function timerAus(text){
     if(sek < 5 || sek > 48 * 3600) continue;
     const kurz = f === 3600 ? " Std." : f === 1 ? " Sek." : " min";
     aus.push({ sek, label: m[1] + (m[2] ? "–" + m[2] : "") + kurz, treffer: m[0] });
+  }
+  return aus;
+}
+/* Zubereitung: eine kurze Zeile mit Doppelpunkt am Ende ist eine Überschrift („Für den Teig:“), wie bei den Zutaten.
+   Nummeriert wird durchgehend über alle Abschnitte (passt zu „Schritt 4 von 7“ im Küchenmodus). */
+const istUeberschrift = s => /:\s*$/.test(s) && s.trim().length <= 60;
+function schrittListe(schritte){
+  const aus = []; let ueber = "";
+  for(const s of schritte || []){
+    if(istUeberschrift(s)){ ueber = s.trim().replace(/\s*:\s*$/, ""); aus.push({ ueber }); }
+    else aus.push({ text: s, nr: aus.filter(x => x.text != null).length + 1, abschnitt: ueber });
   }
   return aus;
 }
@@ -635,7 +646,7 @@ function rezeptZeigen(){
     <div class="r"><button id="kochen">👩‍🍳 Kochen</button><button id="aufListe">🛒 Auf die Einkaufsliste</button><button class="g" id="direktBring">Direkt in Bring!</button></div>
     <h3>Zutaten</h3><ul class="z">${h}</ul>
     ${r.zutaten.some(z => z.menge == null && !istNachGeschmack(z)) ? '<div class="s" style="margin-top:6px">Gelb mit „?“: Menge fehlt. Unter ✎ Bearbeiten eintragen oder „nach Geschmack“ wählen.</div>' : ""}
-    <h3>Zubereitung</h3><ol class="st">${r.schritte.map(s => "<li>" + esc(s) + "</li>").join("")}</ol>
+    <h3>Zubereitung</h3>${schrittListe(r.schritte).map(x => x.ueber != null ? `<div class="grp">${esc(x.ueber)}</div>` : `<ol class="st" start="${x.nr}"><li>${esc(x.text)}</li></ol>`).join("")}
     ${r.notiz ? `<div class="k s">📝 ${esc(r.notiz)}</div>` : ""}
     <div class="r"><button class="g klein" id="bearb">✎ Bearbeiten</button><button class="g klein" id="loesch">Löschen</button></div>
     <div id="rStand" class="s"></div>`;
@@ -999,7 +1010,7 @@ async function bring(titel, zeilen, standId){
    stimmt also auch, wenn iOS die App im Hintergrund anhält. Ton nur, wenn der Stummschalter aus ist. */
 let K = null, TIMER = [], TAKT = null, WACH = null, AUDIO = null;
 function kochen(r, f){
-  K = { r, f, i: 0, ab: new Set(), ende: false };
+  K = { r, f, i: 0, ab: new Set(), ende: false, st: schrittListe(r.schritte).filter(x => x.text != null) };
   $("kueche").hidden = false; document.body.style.overflow = "hidden"; $("kZutBox").hidden = true;
   kZutaten(); kZeigen(); kTimer(); wachHalten();
 }
@@ -1008,15 +1019,15 @@ function kSchliessen(){
   try { WACH?.release(); } catch {} WACH = null;
 }
 function kZeigen(){
-  const n = K.r.schritte.length;
+  const n = K.st.length;
   if(K.ende) return kEnde();
   $("kTitel").textContent = K.r.titel;
   $("kPos").textContent = n ? (K.i + 1) + " / " + n : "";
-  const s = K.r.schritte[K.i] || "Dieses Rezept hat keine Schritte.";
+  const s = K.st[K.i]?.text || "Dieses Rezept hat keine Schritte.", abschnitt = K.st[K.i]?.abschnitt;
   const tm = timerAus(s);
   let html = esc(s);
   for(const t of [...new Set(tm.map(t => t.treffer))]) html = html.split(esc(t)).join("<mark>" + esc(t) + "</mark>");
-  $("kSchritt").innerHTML = (n ? `<span class="nr">Schritt ${K.i + 1}</span>` : "") + html;
+  $("kSchritt").innerHTML = (n ? `<span class="nr">${abschnitt ? esc(abschnitt) + " · " : ""}Schritt ${K.i + 1}</span>` : "") + html;
   $("kTimerKnopf").innerHTML = tm.map((t, j) => `<button data-j="${j}">⏱ ${esc(t.label)} starten</button>`).join("");
   $("kTimerKnopf").querySelectorAll("button").forEach(b => b.onclick = () => {
     const t = tm[b.dataset.j]; tonBereit();
@@ -1083,7 +1094,7 @@ async function wachHalten(){
 $("kZu").onclick = kSchliessen;
 $("kZut").onclick = () => { $("kZutBox").hidden = !$("kZutBox").hidden; };
 $("kVor").onclick = () => { if(K.ende){ K.ende = false; kZeigen(); } else if(K.i > 0){ K.i--; kZeigen(); } };
-$("kNach").onclick = () => { if(K.ende) return kSchliessen(); if(K.i < K.r.schritte.length - 1){ K.i++; } else K.ende = true; kZeigen(); };
+$("kNach").onclick = () => { if(K.ende) return kSchliessen(); if(K.i < K.st.length - 1){ K.i++; } else K.ende = true; kZeigen(); };
 /* Nach dem letzten Schritt: als gekocht eintragen und gleich bewerten (das ist der Moment, in dem man es weiß). */
 function kEnde(){
   const r = REZEPTE.find(x => x.id === K.r.id) || K.r, schon = heuteGekocht(r);
