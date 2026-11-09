@@ -191,7 +191,8 @@ button.g.merkt{background:var(--pink);color:#fff;border-color:var(--kante);box-s
         <div class="r"><button class="g klein" id="zPlus">+ Zutat</button><button class="g klein" id="gPlus">+ Überschrift</button><button class="g klein" id="zText">Als Text bearbeiten</button></div>
         <div id="zTextBox" hidden><div class="s" style="margin:8px 0 4px">Eine Zutat je Zeile, Zahl vorne („200 g Mehl“). Zeile mit Doppelpunkt am Ende = Überschrift.</div><textarea id="eZut" style="min-height:200px"></textarea></div>
       </div>
-      <div style="margin-top:10px"><div class="s">Schritte — einer je Zeile. Zeile mit Doppelpunkt am Ende = Überschrift („Für den Teig:“)</div><textarea id="eSchr" style="min-height:160px"></textarea></div>
+      <div style="margin-top:10px"><div class="s">Schritte — einer je Zeile</div><textarea id="eSchr" style="min-height:160px"></textarea>
+        <div class="r"><button class="g klein" id="sPlus" type="button">+ Überschrift</button><span class="s">Überschriften bekommen keine Nummer.</span></div></div>
       <div style="margin-top:10px"><div class="s">Notiz</div><textarea id="eNotiz" style="min-height:60px"></textarea></div>
       <div style="margin-top:10px"><div class="s">Link zum Original</div><input type="text" id="eQuelle" inputmode="url"></div>
       <div style="margin-top:14px"><div class="s"><b>Vorschaubild</b> <span class="s">(antippen zum Auswählen)</span></div><div class="bilder" id="eBild"></div><div id="eBildS" class="s"></div>
@@ -228,7 +229,7 @@ button.g.merkt{background:var(--pink);color:#fff;border-color:var(--kante);box-s
 <script>
 /* ==== Logik ==== (kein DOM; test/rezepte.mjs schneidet diesen Block aus) */
 const WORKER = "https://recipes.rjtp6r9s9h.workers.dev";
-const FASSUNG = "09.11.2026 c";
+const FASSUNG = "09.11.2026 d";
 const GAENGE = ["Obst & Gemüse", "Brot & Backwaren", "Kühlregal", "Fleisch & Fisch", "Tiefkühl",
   "Nudeln, Reis & Trockenes", "Konserven & Gläser", "Gewürze, Öl & Saucen", "Backzutaten", "Getränke", "Sonstiges"];
 const EINHEITEN = ["g", "kg", "ml", "l", "EL", "TL", "Prise", "Msp", "Stück", "Dose", "Bund", "Zehe", "Becher", "Pck", "Scheibe", "Handvoll"];
@@ -798,6 +799,17 @@ function textModus(an){
   ZTEXT = an; $("zTextBox").hidden = !an; $("zutEd").hidden = an; $("zKopf").hidden = an;
   $("zPlus").hidden = an; $("gPlus").hidden = an; $("zText").textContent = an ? "Zurück zu den Feldern" : "Als Text bearbeiten";
 }
+/* Überschrift in die Zubereitung: neue Zeile „Überschrift:“ an der Schreibmarke (bzw. am Ende), das Wort markiert,
+   damit man es gleich überschreibt. Gespeichert wird es als Zeile mit Doppelpunkt (siehe schrittListe). */
+$("sPlus").onclick = () => {
+  const t = $("eSchr"), wort = "Überschrift";
+  const pos = document.activeElement === t || t._pos != null ? (t._pos ?? t.selectionEnd) : t.value.length;
+  const vor = t.value.slice(0, pos), davor = vor && !vor.endsWith("\n") ? "\n" : "";
+  t.setRangeText(davor + wort + ":\n", pos, pos, "end");
+  const a = pos + davor.length; t.focus(); t.setSelectionRange(a, a + wort.length);
+};
+$("eSchr").addEventListener("blur", () => { $("eSchr")._pos = $("eSchr").selectionEnd; });
+$("eSchr").addEventListener("focus", () => { $("eSchr")._pos = null; });
 $("zPlus").onclick = () => { const d = zeileEl(); $("zutEd").appendChild(d); d.querySelector(".zm").focus(); };
 $("gPlus").onclick = () => { const d = gruppeEl(); $("zutEd").appendChild(d); d.querySelector(".zn").focus(); };
 $("zText").onclick = () => {

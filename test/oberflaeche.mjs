@@ -136,7 +136,12 @@ await p.fill("#suche", "");
 
 // Überschrift in der Zubereitung
 await p.click("#liste .li:has-text('Gnocchi')"); await p.click("#bearb");
-await p.fill("#eSchr", "Für die Gnocchi:\nGnocchi braten.\nSauce:\nSahne dazu, 5 Minuten köcheln.");
+await p.fill("#eSchr", "Gnocchi braten.\nSahne dazu, 5 Minuten köcheln.");
+await p.evaluate(() => { const t = document.getElementById("eSchr"); t.focus(); t.setSelectionRange(0, 0); t.blur(); });
+await p.click("#sPlus"); await p.keyboard.type("Für die Gnocchi");
+await p.evaluate(() => { const t = document.getElementById("eSchr"); const i = t.value.indexOf("Sahne"); t.focus(); t.setSelectionRange(i, i); t.blur(); });
+await p.click("#sPlus"); await p.keyboard.type("Sauce");
+ok(await p.inputValue("#eSchr") === "Für die Gnocchi:\nGnocchi braten.\nSauce:\nSahne dazu, 5 Minuten köcheln.", "Knopf „+ Überschrift“ setzt die Zeile an die Schreibmarke, Wort zum Überschreiben markiert");
 await p.click("#eSpeichern"); await p.waitForSelector("#vRezept:not([hidden]) h2");
 const zub = await p.evaluate(() => [...document.querySelectorAll("#vRezept .grp, #vRezept ol.st")].map(e => e.matches("ol") ? e.start + ". " + e.innerText : "# " + e.innerText));
 ok(JSON.stringify(zub).includes('"# Für die Gnocchi","1. Gnocchi braten.","# Sauce","2. Sahne dazu, 5 Minuten köcheln."'), "Überschriften ohne Nummer, Schritte durchgezählt" + " → " + JSON.stringify(zub));

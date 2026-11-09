@@ -232,7 +232,7 @@ Vom Nutzer gefragt: Überschrift im Rezept ohne Zahl davor. Gleiche Regel wie be
 Zeichen) mit Doppelpunkt am Ende** = Überschrift (`istUeberschrift`, `schrittListe`), pink wie Zutatengruppen, ohne
 Nummer; Schritte werden **durchgehend** nummeriert (je Schritt ein `<ol start>`), damit „Schritt 4 von 7“ im
 Küchenmodus stimmt. Küchenmodus überspringt Überschriften und zeigt sie als Beschriftung („Sauce · Schritt 2“). Lange
-Sätze mit Doppelpunkt am Ende bleiben Schritte. Hinweis steht über dem Schritte-Feld im Editor. Gespeichert wird
+Sätze mit Doppelpunkt am Ende bleiben Schritte. Seit Fassung d (vom Nutzer: „bei den Zutaten gibt es ja + Überschrift“) auch hier ein Knopf **„+ Überschrift“** unter dem Schritte-Feld: fügt „Überschrift:“ als eigene Zeile an der Schreibmarke ein (gemerkt beim Verlassen des Felds, sonst am Ende) und markiert das Wort zum Überschreiben. Gespeichert wird
 unverändert als Zeile in `schritte` — kein Worker-Umbau. Die KI liefert Abschnitte noch nicht so; bei Bedarf im
 `AUFTRAG` ergänzen (dann Worker neu einfügen).
 
