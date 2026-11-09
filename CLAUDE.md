@@ -166,7 +166,9 @@ gesperrt“ …) — beim nächsten Fehlschlag am iPhone diesen Text erfragen.
 ## Memo vom Nutzer, für später (08.11.2026)
 
 1. **Rezeptkategorien** (z. B. Vorspeise, Hauptgericht, Dessert, Backen; Filter in der Liste). Die KI könnte beim Import
-   eine vorschlagen.
+   eine vorschlagen. **Vom Nutzer (09.11.): die Kategorien selbst sollen editierbar sein** (eigene anlegen, umbenennen,
+   löschen) — also eine gemeinsame Kategorienliste auf dem Server, nicht fest im Code; beim Löschen einer Kategorie
+   fragen, was mit ihren Rezepten passiert.
 2. **Suche** — gibt es schon (Titel und Zutaten, Wörter mit Leerzeichen = alle müssen passen); was dem Nutzer fehlt,
    vor dem Bauen erfragen (Kategorien? Filter wie „schnell“, „vegetarisch“? Suche in Schritten/Notiz?).
 3. **Rezept von Hand eingeben** — „+ Rezept → Von Hand eintippen“ gibt es schon (gleicher Editor wie die KI-Vorschau);
@@ -185,3 +187,8 @@ gesperrt“ …) — beim nächsten Fehlschlag am iPhone diesen Text erfragen.
    der Auftrag Erfinden verbietet. Gefährlich, weil es wie gelesen aussieht. Beim Bauen von Punkt 5: Seite im Worker holen
    (schema.org/Recipe zuerst, sonst Seitentext an Gemini) oder Geminis `url_context`-Werkzeug; bis dahin sollte ein
    reiner Webseiten-Link ohne Inhalt in der Vorschau einen Warnhinweis bekommen. Mit diesem Link testen.
+6. **Vorschaubild ändern** (vom Nutzer, 09.11.): beim Bearbeiten das Vorschaubild austauschen oder entfernen und ein Bild
+   aus der Mediathek wählen (`<input type="file" accept="image/*">`, App verkleinert, als Original mit Merkmal „Vorschau“
+   speichern). Dafür braucht der Worker: Original löschen (`DELETE /api/original/<rezept>/<id>`) und festlegen, welches
+   Bild die Vorschau ist (z. B. `rezept.vorschau = <id>`; ohne Angabe wie heute das erste Foto). Geht damit auch für
+   alte Rezepte ohne Original und als Ersatz, falls das Standbild aus dem Video am iPhone nicht klappt.
