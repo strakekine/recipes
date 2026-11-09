@@ -238,7 +238,7 @@ button.g.merkt{background:var(--pink);color:#fff;border-color:var(--kante);box-s
 <script>
 /* ==== Logik ==== (kein DOM; test/rezepte.mjs schneidet diesen Block aus) */
 const WORKER = "https://recipes.rjtp6r9s9h.workers.dev";
-const FASSUNG = "09.11.2026 g";
+const FASSUNG = "09.11.2026 h";
 const GAENGE = ["Obst & Gemüse", "Brot & Backwaren", "Kühlregal", "Fleisch & Fisch", "Tiefkühl",
   "Nudeln, Reis & Trockenes", "Konserven & Gläser", "Gewürze, Öl & Saucen", "Backzutaten", "Getränke", "Sonstiges"];
 const EINHEITEN = ["g", "kg", "ml", "l", "EL", "TL", "Prise", "Msp", "Stück", "Dose", "Bund", "Zehe", "Becher", "Pck", "Scheibe", "Handvoll"];
@@ -1141,9 +1141,9 @@ async function buchBauen(){
       catch(e){ fehlt++; grund = grund || (/fetch|load|network/i.test(e.message) ? "Bild gesperrt — ist der Worker auf Fassung 09.11.2026 d?" : e.message); }
     }
     const html = rezeptbuchHtml({ rezepte: REZEPTE, kats: KATS, bilder, pdf });
-    const name = "Rezeptbuch-" + new Date().toLocaleDateString("sv-SE") + ".html";
+    const name = "Rezeptbuch.html";   // immer gleich (vom Nutzer): überschreiben statt jedes Mal eine neue Datei; das Datum steht im Buch
     BUCH = new File([html], name, { type: "text/html" });
-    st.innerHTML = "Rezeptbuch fertig: " + REZEPTE.length + " Rezepte, " + (BUCH.size / 1048576).toFixed(1) + " MB" + (fehlt ? ' — <span class="f">' + fehlt + " Bilder fehlten (" + esc(grund) + ")</span>" : "") + ". Jetzt sichern tippen und z. B. „In Dateien sichern“ → iCloud Drive wählen.";
+    st.innerHTML = "Rezeptbuch fertig: " + REZEPTE.length + " Rezepte, " + (BUCH.size / 1048576).toFixed(1) + " MB" + (fehlt ? ' — <span class="f">' + fehlt + " Bilder fehlten (" + esc(grund) + ")</span>" : "") + ". Jetzt sichern tippen, „In Dateien sichern“ → iCloud Drive; gibt es die Datei schon, „Ersetzen“ wählen.";
     $("teilenZeile").hidden = false;
   } catch(e){ st.innerHTML = '<span class="f">' + esc(e.message) + "</span>"; }
   $("sichern").disabled = false;

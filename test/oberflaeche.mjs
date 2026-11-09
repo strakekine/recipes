@@ -324,7 +324,7 @@ await p.click("#sichern"); await p.waitForSelector("#teilenZeile:not([hidden])")
 const [dl] = await Promise.all([p.waitForEvent("download"), p.click("#sicherTeilen")]);
 const buchPfad = (BILD || tmpdir()) + "/rezeptbuch.html"; await dl.saveAs(buchPfad);
 const buchHtml = readFileSync(buchPfad, "utf8");
-ok(dl.suggestedFilename().startsWith("Rezeptbuch-") && buchHtml.includes("Cremige Gnocchi") && buchHtml.includes("★★★★☆") && (await p.textContent("#sicherStand")).includes("Gesichert"), "Rezeptbuch als Datei gesichert");
+ok(dl.suggestedFilename() === "Rezeptbuch.html" && buchHtml.includes("Cremige Gnocchi") && buchHtml.includes("★★★★☆") && (await p.textContent("#sicherStand")).includes("Gesichert"), "Rezeptbuch als Datei gesichert");
 const leser = await br.newPage({ viewport: { width: 390, height: 800 } });
 await leser.setContent(buchHtml);
 ok((await leser.textContent("h1")).includes("Unsere Rezepte") && await leser.evaluate(() => [...document.querySelectorAll("img.gross")].every(i => i.naturalWidth > 0) && document.querySelectorAll("img.gross").length === 1), "Rezeptbuch ohne App lesbar, Bild eingebettet");

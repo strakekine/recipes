@@ -241,7 +241,9 @@ Nummer weiter (vorher „1. [Name]“). **Worker neu einfügen nötig.**
 
 Vom Nutzer: Angst, dass die Rezepte weg sind; Export nach Apple Notizen? Und: „was, wenn die App weg ist?“ — darum keine
 reine Daten-Datei. **Notizen abgeraten** (Webseite darf nicht hineinschreiben, nur Rezept für Rezept, nicht wieder
-einlesbar). Gebaut, vom Nutzer bestätigt: **„Rezeptbuch-JJJJ-MM-TT.html“** (`rezeptbuchHtml`, Logik) — lesbar ohne App in
+einlesbar). Gebaut, vom Nutzer bestätigt: **„Rezeptbuch.html“** (seit Fassung h ohne Datum im Namen, vom Nutzer: eine Datei, beim
+Sichern „Ersetzen“ statt jedes Mal neuer Speicherplatz; Rat an ihn: alle paar Monate „Beide behalten“ als ältere Kopie — wer
+nach einem versehentlichen Löschen sichert, überschreibt sonst den letzten Stand mit dem Rezept) (`rezeptbuchHtml`, Logik) — lesbar ohne App in
 jedem Browser/der Dateien-App (Inhalt nach Kategorien, je Rezept Bilder als data:-Adressen, Zutaten, Überschriften,
 Schritte, Notiz, Sterne, Link; druckbar), und unsichtbar dieselbe Sammlung als JSON (`#recipes-sicherung`, `</script>`
 im JSON als `\u003c` maskiert). **Jedes Bild steht nur einmal in der Datei** (`img[data-id]`, beim Wiedereinlesen
