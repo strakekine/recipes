@@ -349,6 +349,20 @@ ok(nachBw.d.rezept.sterne === 4 && nachBw.d.rezept.gekocht.length === 1 && !("me
 ok(!("sterne" in (await bwr({ sterne: 0 })).d.rezept), "Sterne 0 = Bewertung weg");
 ok((await call("/api/bewerten/gibtsnicht", { method: "POST", headers: { "content-type": "application/json" }, body: "{}" })).r.status === 404, "unbekanntes Rezept: 404");
 
+
+// Wiederherstellen aus dem Rezeptbuch
+const altR = { id: "wieder123", titel: "Omas Apfelkuchen", portionen: 1, portion_einheit: "Kuchen", zutaten: [{ name: "Äpfel", menge: 4, einheit: "" }], schritte: ["Teig:", "Kneten."],
+  kategorien: ["backen"], sterne: 5, gekocht: [1700000000000, 1710000000000], merken: 1720000000000, erstellt: 1690000000000, geaendert: 1695000000000, vorschau: "x".repeat(24),
+  originale: [{ id: "y".repeat(24), typ: "image/jpeg", name: "a.jpg", groesse: 3 }] };
+const wh = await call("/api/wiederherstellen", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ rezept: altR }) });
+ok(wh.d?.rezept?.sterne === 5 && wh.d.rezept.gekocht.length === 2 && wh.d.rezept.merken === 1720000000000 && wh.d.rezept.erstellt === 1690000000000 && wh.d.rezept.geaendert === 1695000000000, "Wiederherstellen: Sterne, gekocht, Kochliste, Zeitpunkte bleiben");
+ok(wh.d.rezept.originale.length === 0 && !("vorschau" in wh.d.rezept) && wh.d.rezept.schritte.join("|") === "Teig:|Kneten.", "alte Bild-ids verworfen (Bilder kommen einzeln neu)");
+ok((await call("/api/wiederherstellen", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ rezept: { ...altR, titel: "Überschreiben?" } }) })).r.status === 409, "vorhandenes Rezept wird nicht überschrieben");
+const whb = await call("/api/original/wieder123?typ=image%2Fpng&name=a.png&vorschau=1&wieder=1", { method: "PUT", body: new Uint8Array(50) });
+ok(whb.d.rezept.vorschau === whb.d.rezept.originale[0].id && whb.d.rezept.geaendert === 1695000000000, "Bild nachgeschickt als Vorschau, Reihenfolge (geaendert) bleibt");
+const bildCors = await worker.fetch(new Request("https://w/bild/" + whb.d.rezept.vorschau), env);
+ok(bildCors.status === 200 && bildCors.headers.get("access-control-allow-origin") === "*", "Bilder mit CORS-Freigabe (für das Rezeptbuch)");
+
 // Gegenprobe: saeubern ohne Prüfung würde Mengen ohne Zahl durchlassen
 ok(W.saeubern({ titel: "x", zutaten: [{ name: "a", menge: "viel" }], schritte: [] }).zutaten[0].menge === null, "Text als Menge wird null");
 

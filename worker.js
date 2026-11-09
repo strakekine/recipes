@@ -593,13 +593,13 @@ async function rezeptHolen(db, rid){
   const zeile = await db.prepare("SELECT daten FROM rezepte WHERE id = ?").bind(rid).first();
   return zeile ? JSON.parse(zeile.daten) : null;
 }
-async function rezeptSchreiben(db, rezept){
-  rezept.geaendert = Date.now();
+async function rezeptSchreiben(db, rezept, zeitLassen = false){
+  if(!zeitLassen) rezept.geaendert = Date.now();
   await db.prepare("UPDATE rezepte SET daten = ?, geaendert = ? WHERE id = ?").bind(JSON.stringify(rezept), rezept.geaendert, rezept.id).run();
   return json({ rezept });
 }
 /* Original anhängen; mit vorschau=1 wird es das Vorschaubild (Bild aus der Mediathek, Bild der Webseite). */
-async function originalAnhaengen(env, rid, typ, name, bytes, vorschau){
+async function originalAnhaengen(env, rid, typ, name, bytes, vorschau, zeitLassen = false){
   const db = env.DB;
   const rezept = await rezeptHolen(db, rid);
   if(!rezept) return fehler("Rezept nicht gefunden.", 404);
@@ -608,11 +608,12 @@ async function originalAnhaengen(env, rid, typ, name, bytes, vorschau){
   const id = await bytesSpeichern(db, rid, typ, name, bytes);
   rezept.originale = [...(rezept.originale || []), { id, typ, name, groesse: bytes.length }];
   if(vorschau) rezept.vorschau = id;
-  return rezeptSchreiben(db, rezept);
+  return rezeptSchreiben(db, rezept, zeitLassen);
 }
 async function originalSpeichern(env, request, rid, url){
   const bytes = new Uint8Array(await request.arrayBuffer());
-  return originalAnhaengen(env, rid, str(url.searchParams.get("typ"), 60), str(url.searchParams.get("name"), 100), bytes, url.searchParams.get("vorschau") === "1");
+  return originalAnhaengen(env, rid, str(url.searchParams.get("typ"), 60), str(url.searchParams.get("name"), 100), bytes,
+    url.searchParams.get("vorschau") === "1", url.searchParams.get("wieder") === "1");   // wieder=1: beim Wiederherstellen Reihenfolge behalten
 }
 /* Bild von einer Adresse holen (Bild der Rezept-Webseite). */
 async function originalVonUrl(env, rid, url){
@@ -716,6 +717,28 @@ async function bewerten(env, request, rid){
   return json({ rezept: r });
 }
 
+/* ---------- Wiederherstellen aus dem Rezeptbuch (Sicherungsdatei der App) ----------
+   Nur Rezepte, die es nicht (mehr) gibt — Vorhandenes bleibt unangetastet. Anders als PUT übernimmt das hier auch
+   Sterne, gekocht, Kochliste und die Zeitpunkte. Die Bilder schickt die App danach einzeln (PUT /api/original … &wieder=1). */
+async function wiederherstellen(env, request){
+  const e = await request.json().catch(() => null), o = e?.rezept;
+  const id = o?.id;
+  if(!/^[\w-]{6,40}$/.test(id || "")) return fehler("Ungültige Rezept-id.", 400);
+  const db = env.DB;
+  if(await rezeptHolen(db, id)) return fehler("Dieses Rezept gibt es schon.", 409);
+  const r = saeubern(o);
+  if(!r || !r.titel) return fehler("Rezept ohne Titel.", 400);
+  r.originale = [];
+  if(r.vorschau !== "-") delete r.vorschau;
+  const jetzt = Date.now();
+  const gekocht = (Array.isArray(o.gekocht) ? o.gekocht : []).filter(t => Number.isFinite(t) && t > 0 && t <= jetzt).slice(-GEKOCHT_MAX);
+  const daten = { ...r, id, erstellt: zahl(o.erstellt, 1, jetzt) || jetzt, geaendert: zahl(o.geaendert, 1, jetzt) || jetzt,
+    ...(Number.isInteger(o.sterne) && o.sterne >= 1 && o.sterne <= 5 ? { sterne: o.sterne } : {}),
+    ...(gekocht.length ? { gekocht } : {}), ...(zahl(o.merken, 1, jetzt) ? { merken: o.merken } : {}) };
+  await db.prepare("INSERT INTO rezepte (id, daten, geaendert) VALUES (?, ?, ?)").bind(id, JSON.stringify(daten), daten.geaendert).run();
+  return json({ rezept: daten });
+}
+
 /* ---------- Eingang ---------- */
 export default {
   async fetch(request, env, ctx){
@@ -733,7 +756,10 @@ export default {
     const b = url.pathname.match(/^\/bring\/([\w]{16})$/);
     if(b && request.method === "GET") return bringSeite(env, b[1]);
     const bild = url.pathname.match(/^\/bild\/([a-z0-9]{24})$/);
-    if(bild && request.method === "GET") return originalZeigen(env, bild[1]);
+    if(bild && request.method === "GET"){
+      /* Bilder sind ohnehin öffentlich (zufällige id); die Freigabe braucht die App, um sie ins Rezeptbuch zu packen. */
+      const r = await originalZeigen(env, bild[1]); r.headers.set("access-control-allow-origin", "*"); return r;
+    }
     if(!url.pathname.startsWith("/api/")) return new Response("Nicht gefunden.", { status: 404 });
 
     if(!env.FAMILIEN_CODE) return mit(fehler("Secret FAMILIEN_CODE fehlt im Worker.", 503));
@@ -777,6 +803,7 @@ export default {
       if(od && request.method === "DELETE") return mit(await originalLoeschen(env, od[1], od[2]));
       if(url.pathname === "/api/kategorien") return mit(await kategorien(env, request));
       if(url.pathname === "/api/kategorie-bild" && request.method === "PUT") return mit(await kategorieBild(env, request, url));
+      if(url.pathname === "/api/wiederherstellen" && request.method === "POST") return mit(await wiederherstellen(env, request));
       const bw = url.pathname.match(/^\/api\/bewerten\/([\w-]{6,40})$/);
       if(bw && request.method === "POST") return mit(await bewerten(env, request, bw[1]));
       const m = url.pathname.match(/^\/api\/rezepte(?:\/([^/]+))?$/);
@@ -815,7 +842,7 @@ label.file{display:block;border:2px dashed var(--l);border-radius:12px;padding:1
 <div class="k" id="ergebnis" hidden></div>
 <div class="k"><b>Gespeichert</b><div id="liste" class="s">–</div></div>
 <details class="k" id="protK"><summary><b>Protokoll</b> <span class="s">(was der Worker zuletzt gemacht hat)</span></summary><div id="prot" class="s">–</div></details>
-<div class="s" style="text-align:center">Fassung 09.11.2026 c</div>
+<div class="s" style="text-align:center">Fassung 09.11.2026 d</div>
 </main><script>
 const $=id=>document.getElementById(id);
 let CODE="";try{CODE=localStorage.getItem("recipes_code")||""}catch{}

@@ -237,6 +237,29 @@ unverändert als Zeile in `schritte` — kein Worker-Umbau. **Worker Fassung „
 Zeile „Name:“ vor deren Schritten, keine erfundenen Abschnitte; `ldAlsText` gibt HowToSection als „Abschnitt Name:“ ohne
 Nummer weiter (vorher „1. [Name]“). **Worker neu einfügen nötig.**
 
+## Sicherung: Rezeptbuch, Wiederherstellen, Rezept teilen (09.11.2026, App „09.11.2026 e“, Worker „09.11.2026 d“ — **Worker neu einfügen nötig**)
+
+Vom Nutzer: Angst, dass die Rezepte weg sind; Export nach Apple Notizen? Und: „was, wenn die App weg ist?“ — darum keine
+reine Daten-Datei. **Notizen abgeraten** (Webseite darf nicht hineinschreiben, nur Rezept für Rezept, nicht wieder
+einlesbar). Gebaut, vom Nutzer bestätigt: **„Rezeptbuch-JJJJ-MM-TT.html“** (`rezeptbuchHtml`, Logik) — lesbar ohne App in
+jedem Browser/der Dateien-App (Inhalt nach Kategorien, je Rezept Bilder als data:-Adressen, Zutaten, Überschriften,
+Schritte, Notiz, Sterne, Link; druckbar), und unsichtbar dieselbe Sammlung als JSON (`#recipes-sicherung`, `</script>`
+im JSON als `\u003c` maskiert). **Jedes Bild steht nur einmal in der Datei** (`img[data-id]`, beim Wiedereinlesen
+herausgelesen), PDFs im JSON (`pdf`, Öffnen per kleinem Skript über Blob). **Achtung:** im App-Quelltext muss jedes
+`</script>` in diesem Text als `<\/script>` stehen, sonst beendet es das Skript der App (passiert, Seite war leer).
+App: Kasten „💾 Sicherung“ unter den Kacheln (bei leerer Sammlung immer). **Zwei Schritte**: „Rezeptbuch erstellen“
+(holt Stand und Bilder — dafür hat `/bild/<id>` jetzt `access-control-allow-origin: *`), dann „📤 Rezeptbuch sichern“ —
+iOS öffnet die Teilen-Leiste nur direkt nach einem Tippen, nicht nach langem Warten. Ohne Teilen-Leiste Download.
+**Wiederherstellen** (Datei wählen): nur fehlende Rezepte (nach id) und fehlende Kategorien (samt Kachelbild); Vorhandenes
+bleibt unangetastet, zweimal einlesen schadet nicht. Worker `POST /api/wiederherstellen` (409, wenn es die id gibt;
+übernimmt Sterne, gekocht, Kochliste, erstellt/geaendert; alte Bild-ids weg), danach Bilder einzeln
+`PUT /api/original/…&wieder=1` (lässt `geaendert` stehen) und `&vorschau=1` für das gewählte Vorschaubild.
+**Erinnerung** oben auf der Startseite (`sicherungFaellig`): seit der letzten Sicherung (`recipes_gesichert`, je Handy)
+etwas geändert und die Sicherung bzw. das älteste Rezept älter als 14 Tage; „Später“ = 3 Tage (`recipes_sicher_spaeter`).
+**„📤 Teilen“** im Rezept: `rezeptText` (umgerechnet auf die eingestellte Menge) über `navigator.share({text})` — nur Text,
+kein `url` (iMessage ließ sonst den Text weg); sonst Zwischenablage. Am iPhone noch nicht ausprobiert (Teilen der großen
+Datei, Öffnen in der Dateien-App).
+
 ## Memo vom Nutzer, für später (08.11.2026) — 1, 4, 5, 6 am 09.11. gebaut (siehe oben); 2 und 3 vom Nutzer erledigt („wenn es sie gibt, ist so ok“, 09.11.) — nur bauen, wenn er etwas vermisst
 
 1. **Rezeptkategorien** (z. B. Vorspeise, Hauptgericht, Dessert, Backen; Filter in der Liste). Die KI könnte beim Import

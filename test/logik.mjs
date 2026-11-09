@@ -3,7 +3,7 @@ import { readFileSync } from "node:fs";
 const html = readFileSync(new URL("../index.html", import.meta.url), "utf8");
 const a = html.indexOf("/* ==== Logik ===="), b = html.indexOf("/* ==== Oberfläche ====");
 if(a < 0 || b < 0) throw new Error("Marken Logik/Oberfläche nicht gefunden");
-const L = new Function(html.slice(a, b) + "; return { mengeLesen, mengeEingabe, zutatAusFeldern, istNachGeschmack, zeileLesen, mengeText, zeileAus, zutatenText, zutatenLesen, gangRaten, einkaufDazu, einkaufText, nachGang, istVorrat, vorratListe, sucheTrifft, zahlLesen, timerAus, uhrText, rezepteInKat, gekochtText, heuteGekocht, schrittListe };")();
+const L = new Function(html.slice(a, b) + "; return { mengeLesen, mengeEingabe, zutatAusFeldern, istNachGeschmack, zeileLesen, mengeText, zeileAus, zutatenText, zutatenLesen, gangRaten, einkaufDazu, einkaufText, nachGang, istVorrat, vorratListe, sucheTrifft, zahlLesen, timerAus, uhrText, rezepteInKat, gekochtText, heuteGekocht, schrittListe, rezeptText, rezeptbuchHtml, sicherungFaellig };")();
 
 let fehler = 0;
 const ok = (x, t) => { console.log((x ? "✓ " : "✗ ") + t); if(!x) fehler++; };
@@ -108,6 +108,25 @@ gleich(L.schrittListe(["Für den Teig:", "Mehl sieben.", "Kneten.", "Füllung :"
   [{ ueber: "Für den Teig" }, { text: "Mehl sieben.", nr: 1, abschnitt: "Für den Teig" }, { text: "Kneten.", nr: 2, abschnitt: "Für den Teig" }, { ueber: "Füllung" },
    { text: "Äpfel schneiden.", nr: 3, abschnitt: "Füllung" }, { text: "Dabei beachten: nicht zu dünn schneiden, sonst zerfallen sie im Ofen und werden matschig.", nr: 4, abschnitt: "Füllung" }],
   "Doppelpunkt-Zeile = Überschrift, durchgehend nummeriert, langer Satz mit Doppelpunkt bleibt Schritt");
+
+
+// Rezept teilen als Text
+const RT = { titel: "Gnocchi", portionen: 2, portion_einheit: "Personen", zeit_min: 20, zutaten: [{ menge: 500, einheit: "g", name: "Gnocchi" }, { menge: null, einheit: "", name: "Basilikum", hinweis: "eine Handvoll", gruppe: "Deko" }],
+  schritte: ["Sauce:", "Sahne köcheln."], notiz: "lecker", quelle: "https://x.example/r" };
+ok(L.rezeptText(RT, 2) === "Gnocchi\nFür 4 Personen · 20 min\n\nZUTATEN\n- 1 kg Gnocchi\nDeko:\n- Basilikum (eine Handvoll)\n\nZUBEREITUNG\nSauce:\n1. Sahne köcheln.\n\nNotiz: lecker\n\nOriginal: https://x.example/r", "Rezept als Text, umgerechnet, mit Überschriften");
+// Rezeptbuch
+const buch = L.rezeptbuchHtml({ rezepte: [{ ...RT, id: "r1", sterne: 4, kategorien: ["k1"], originale: [{ id: "b".repeat(24), typ: "image/png" }, { id: "p".repeat(24), typ: "application/pdf", name: "scan.pdf" }] },
+  { id: "r2", titel: "Apfel </script> <b>", zutaten: [], schritte: [] }], kats: [{ id: "k1", name: "Pasta", emoji: "🍝", bild: "c".repeat(24) }, { id: "k2", name: "Leer" }],
+  bilder: { ["b".repeat(24)]: "data:image/png;base64,AAAA", ["c".repeat(24)]: "data:image/jpeg;base64,BBBB" }, pdf: { ["p".repeat(24)]: "data:application/pdf;base64,CCCC" }, jetzt: T0 });
+const json = JSON.parse(buch.match(/<script type="application\/json" id="recipes-sicherung">([\s\S]*?)<\/script>/)[1]);
+ok(json.app === "recipes" && json.rezepte.length === 2 && json.rezepte[1].titel === "Apfel </script> <b>" && json.pdf["p".repeat(24)].startsWith("data:application/pdf"), "Rezeptbuch: Daten zum Wiedereinlesen stecken drin (auch mit </script> im Titel)");
+ok(buch.split("<\/script>").length === 3 && buch.includes("<h2>Apfel &lt;/script&gt; &lt;b&gt;</h2>"), "Titel escaped, nur die zwei eigenen Skripte");
+ok((buch.match(/data-id="b{24}"/g) || []).length === 1 && buch.includes('data-id="' + "c".repeat(24) + '"') && buch.includes("data-pdf"), "jedes Bild genau einmal, Kachelbild dabei, PDF-Link");
+ok(buch.includes("Ohne Kategorie") && buch.includes("noch keine Rezepte") && buch.includes("★★★★☆") && buch.includes("<p class=\"g\">Sauce</p>") && buch.includes("09.11.2026"), "Inhalt nach Kategorien, Sterne, Überschriften, Datum");
+// Erinnerung
+const TAG = 864e5, R1 = [{ erstellt: T0 - 20 * TAG, geaendert: T0 - 2 * TAG }];
+ok(L.sicherungFaellig(R1, 0, 0, T0) && !L.sicherungFaellig(R1, T0 - TAG, 0, T0) && !L.sicherungFaellig(R1, T0 - 10 * TAG, 0, T0) && L.sicherungFaellig(R1, T0 - 15 * TAG, 0, T0), "Erinnerung: nie gesichert/älter als 14 Tage mit Änderung");
+ok(!L.sicherungFaellig(R1, 0, T0 + TAG, T0) && !L.sicherungFaellig([], 0, 0, T0) && !L.sicherungFaellig([{ erstellt: T0 - 3 * TAG }], 0, 0, T0), "„Später“, keine Rezepte, junge Sammlung: keine Erinnerung");
 
 console.log(fehler ? `\n${fehler} Fehler` : "\nAlles grün");
 process.exit(fehler ? 1 : 0);

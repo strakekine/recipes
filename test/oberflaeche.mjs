@@ -297,6 +297,34 @@ if(BILD) { await p.click("#zur"); await p.screenshot({ path: BILD + "/liste.png"
 await p.goto(APP); await zuAllen();
 for(const t of ["Croustillants", "Nur Text"]){ await p.click(`#liste .li:has-text('${t}')`); await p.click("#loesch"); await p.waitForSelector("#vListe:not([hidden])"); }
 
+
+// Sicherung: Rezeptbuch erstellen, ohne App lesbar, nach dem Löschen wiederherstellen
+const gid = await p.evaluate(() => REZEPTE.find(r => r.titel === "Cremige Gnocchi").id);
+const wreq = (pfad, o = {}) => W.fetch(new Request("https://recipes.rjtp6r9s9h.workers.dev" + pfad, { ...o, headers: { "x-code": "familie", ...(o.headers || {}) } }), env);
+await wreq("/api/original/" + gid + "?typ=image%2Fpng&name=g.png&vorschau=1", { method: "PUT", body: png });
+await wreq("/api/bewerten/" + gid, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ sterne: 4, gekocht: true }) });
+await p.goto(APP); await p.waitForSelector(".kachel.alle");
+ok(await p.isVisible("#sicherBox"), "Sicherung unten auf der Startseite");
+await p.click("#sichern"); await p.waitForSelector("#teilenZeile:not([hidden])");
+const [dl] = await Promise.all([p.waitForEvent("download"), p.click("#sicherTeilen")]);
+const buchPfad = (BILD || tmpdir()) + "/rezeptbuch.html"; await dl.saveAs(buchPfad);
+const buchHtml = readFileSync(buchPfad, "utf8");
+ok(dl.suggestedFilename().startsWith("Rezeptbuch-") && buchHtml.includes("Cremige Gnocchi") && buchHtml.includes("★★★★☆") && (await p.textContent("#sicherStand")).includes("Gesichert"), "Rezeptbuch als Datei gesichert");
+const leser = await br.newPage({ viewport: { width: 390, height: 800 } });
+await leser.setContent(buchHtml);
+ok((await leser.textContent("h1")).includes("Unsere Rezepte") && await leser.evaluate(() => [...document.querySelectorAll("img.gross")].every(i => i.naturalWidth > 0) && document.querySelectorAll("img.gross").length === 1), "Rezeptbuch ohne App lesbar, Bild eingebettet");
+if(BILD) await leser.screenshot({ path: BILD + "/rezeptbuch.png", fullPage: true });
+await leser.close();
+await p.click(".kachel.alle"); await p.click("#liste .li"); await p.click("#loesch"); await p.waitForSelector("#vListe:not([hidden])");
+ok(await p.isVisible("#sicherBox") && (await p.textContent("#liste")).includes("Noch keine Rezepte"), "alles weg: „Wiederherstellen“ sichtbar");
+await p.setInputFiles("#wiederDatei", buchPfad);
+await p.waitForFunction(() => document.getElementById("sicherStand").textContent.includes("zurückgeholt"));
+const zurueck = JSON.parse(await p.evaluate(() => JSON.stringify(REZEPTE.find(r => r.titel === "Cremige Gnocchi"))));
+ok(zurueck && zurueck.id === gid && zurueck.sterne === 4 && zurueck.gekocht.length === 1 && zurueck.originale.length === 1 && zurueck.vorschau === zurueck.originale[0].id && zurueck.kategorien.includes("snack"), "Wiederhergestellt: gleiche id, Sterne, gekocht, Bild als Vorschau, Kategorie");
+await p.setInputFiles("#wiederDatei", buchPfad);
+await p.waitForFunction(() => document.getElementById("sicherStand").textContent.includes("schon da"));
+ok(true, "zweites Einlesen: nichts doppelt");
+
 // Löschen
 await p.click("#liste .li"); await p.click("#loesch"); await p.waitForSelector("#vListe:not([hidden])");
 ok((await p.textContent("#liste")).includes("Noch keine Rezepte"), "gelöscht");

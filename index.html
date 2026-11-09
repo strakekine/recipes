@@ -147,7 +147,16 @@ button.g.merkt{background:var(--pink);color:#fff;border-color:var(--kante);box-s
   <!-- Rezepte -->
   <section id="vListe">
     <div class="r" style="margin-top:0"><input type="search" id="suche" placeholder="Suchen: Rezept oder Zutat" style="flex:1"><button id="neuBtn">+ Rezept</button></div>
+    <div id="sicherHinweis" class="k" hidden><b>💾 Zeit für eine Sicherung</b>
+      <div class="s">Seit der letzten Sicherung sind Rezepte dazugekommen oder geändert worden. Das Rezeptbuch lässt sich auch ganz ohne App öffnen.</div>
+      <div class="r"><button class="klein" id="sicherJetzt">Jetzt sichern</button><button class="g klein" id="sicherSpaeter">Später</button></div></div>
     <div id="liste"></div>
+    <div id="sicherBox" class="k" hidden><b>💾 Sicherung</b>
+      <div class="s">Das <b>Rezeptbuch</b> ist eine Datei mit allen Rezepten, Bildern, Kategorien und Sternen. Sie lässt sich ohne App in jedem Browser öffnen (Dateien-App antippen) und hier wieder einlesen.</div>
+      <div class="r"><button class="klein" id="sichern">Rezeptbuch erstellen</button><button class="g klein" id="wieder">Wiederherstellen</button></div>
+      <div class="r" id="teilenZeile" hidden><button id="sicherTeilen">📤 Rezeptbuch sichern</button></div>
+      <div id="sicherStand" class="s" style="margin-top:6px"></div>
+      <input type="file" id="wiederDatei" accept=".html,.htm,text/html" hidden></div>
   </section>
   <!-- Kategorien bearbeiten -->
   <section id="vKats" hidden>
@@ -229,7 +238,7 @@ button.g.merkt{background:var(--pink);color:#fff;border-color:var(--kante);box-s
 <script>
 /* ==== Logik ==== (kein DOM; test/rezepte.mjs schneidet diesen Block aus) */
 const WORKER = "https://recipes.rjtp6r9s9h.workers.dev";
-const FASSUNG = "09.11.2026 d";
+const FASSUNG = "09.11.2026 e";
 const GAENGE = ["Obst & Gemüse", "Brot & Backwaren", "Kühlregal", "Fleisch & Fisch", "Tiefkühl",
   "Nudeln, Reis & Trockenes", "Konserven & Gläser", "Gewürze, Öl & Saucen", "Backzutaten", "Getränke", "Sonstiges"];
 const EINHEITEN = ["g", "kg", "ml", "l", "EL", "TL", "Prise", "Msp", "Stück", "Dose", "Bund", "Zehe", "Becher", "Pck", "Scheibe", "Handvoll"];
@@ -443,6 +452,90 @@ function schrittListe(schritte){
   }
   return aus;
 }
+/* ---- Rezeptbuch: Sicherung, die ohne App lesbar ist (vom Nutzer: „was, wenn die App weg ist?“) ----
+   Eine HTML-Datei: oben Inhalt nach Kategorien, dann jedes Rezept mit Bildern (als data:-Adresse eingebettet, keine
+   Verbindung nötig). Unsichtbar steckt dieselbe Sammlung als JSON drin (#recipes-sicherung), damit die App sie wieder
+   einlesen kann; Bilder stehen nur einmal in der Datei (img[data-id]), PDFs im JSON. */
+const escH = s => String(s ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+const katTitel = k => (k.emoji ? k.emoji + " " : "") + k.name;
+function rezeptText(r, f = 1){
+  const z = [r.titel];
+  const meta = [r.portionen ? "Für " + Math.round(r.portionen * f * 10) / 10 + " " + portionWort(r) : "", r.zeit_min ? r.zeit_min + " min" : ""].filter(Boolean).join(" · ");
+  if(meta) z.push(meta);
+  z.push("", "ZUTATEN"); let g = null;
+  for(const x of r.zutaten || []){
+    if((x.gruppe || "") !== g){ g = x.gruppe || ""; if(g) z.push(g + ":"); }
+    z.push("- " + [mengeText(x, f), x.name].filter(Boolean).join(" ") + (x.menge == null && x.hinweis ? " (" + x.hinweis + ")" : ""));
+  }
+  z.push("", "ZUBEREITUNG");
+  for(const s of schrittListe(r.schritte)) z.push(s.ueber != null ? s.ueber + ":" : s.nr + ". " + s.text);
+  if(r.notiz) z.push("", "Notiz: " + r.notiz);
+  if(r.quelle) z.push("", "Original: " + r.quelle);
+  return z.join("\n");
+}
+function rezeptbuchHtml({ rezepte, kats, bilder = {}, pdf = {}, jetzt = Date.now() }){
+  const e = escH, ids = kats.map(k => k.id);
+  const sortiert = [...rezepte].sort((a, b) => a.titel.localeCompare(b.titel, "de"));
+  const bild = (id, cls) => bilder[id] ? `<img class="${cls}" data-id="${e(id)}" src="${e(bilder[id])}" alt="">` : "";
+  const ohne = sortiert.filter(r => !(r.kategorien || []).some(k => ids.includes(k)));
+  const gruppen = [...kats.map(k => ({ k, rs: sortiert.filter(r => (r.kategorien || []).includes(k.id)) })), ...(ohne.length ? [{ k: { name: "Ohne Kategorie" }, rs: ohne }] : [])];
+  const stand = new Date(jetzt).toLocaleDateString("de-DE", { day: "2-digit", month: "2-digit", year: "numeric" });
+  const inhalt = gruppen.map(({ k, rs }) => `<h3>${bild(k.bild, "kb")}${e(katTitel(k))}</h3>` +
+    (rs.length ? `<ul>${rs.map(r => `<li><a href="#r-${e(r.id)}">${e(r.titel)}</a>${r.sterne ? ` <span class="st">${"★".repeat(r.sterne)}</span>` : ""}</li>`).join("")}</ul>` : '<p class="s">noch keine Rezepte</p>')).join("");
+  const rezeptHtml = r => {
+    const katn = (r.kategorien || []).map(id => kats.find(k => k.id === id)).filter(Boolean).map(katTitel);
+    const meta = [r.sterne ? `<span class="st">${"★".repeat(r.sterne)}${"☆".repeat(5 - r.sterne)}</span>` : "", r.portionen ? "Für " + r.portionen + " " + e(portionWort(r)) : "",
+      r.zeit_min ? r.zeit_min + " min" : "", r.gekocht?.length ? e(gekochtText(r, jetzt)) : "", katn.length ? e(katn.join(", ")) : ""].filter(Boolean).join(" · ");
+    const fotos = (r.originale || []).filter(o => /^image\//.test(o.typ) && bilder[o.id]);
+    const erstes = fotos.find(o => o.id === r.vorschau) || (r.vorschau === "-" ? null : fotos[0]);
+    const pdfs = (r.originale || []).filter(o => o.typ === "application/pdf" && pdf[o.id]);
+    let zut = "", g = null;
+    for(const x of r.zutaten || []){
+      if((x.gruppe || "") !== g){ g = x.gruppe || ""; if(g) zut += `<li class="g">${e(g)}</li>`; }
+      const m = mengeText(x, 1);
+      zut += `<li><b>${e(m)}</b> ${e(x.name)}${x.hinweis ? ` <span class="s">(${e(x.hinweis)})</span>` : ""}</li>`;
+    }
+    const schritte = schrittListe(r.schritte).map(x => x.ueber != null ? `<p class="g">${e(x.ueber)}</p>` : `<ol start="${x.nr}"><li>${e(x.text)}</li></ol>`).join("");
+    return `<section class="rz" id="r-${e(r.id)}"><h2>${e(r.titel)}</h2>${meta ? `<p class="meta">${meta}</p>` : ""}
+${erstes ? bild(erstes.id, "gross") : ""}${fotos.filter(o => o !== erstes).map(o => bild(o.id, "klein")).join("")}
+<h4>Zutaten</h4><ul class="zut">${zut}</ul><h4>Zubereitung</h4>${schritte}
+${r.notiz ? `<p class="notiz">📝 ${e(r.notiz)}</p>` : ""}${r.quelle ? `<p>Original: <a href="${e(r.quelle)}">${e(r.quelle)}</a></p>` : ""}
+${pdfs.map(o => `<p><a href="#" data-pdf="${e(o.id)}">📄 Original-PDF ${e(o.name || "")} öffnen</a></p>`).join("")}
+<p class="hoch"><a href="#inhalt">↑ Inhalt</a></p></section>`;
+  };
+  const daten = { app: "recipes", version: 1, erstellt: jetzt, kategorien: kats, rezepte, pdf };
+  return `<!doctype html><html lang="de"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Rezeptbuch ${e(stand)}</title><style>
+body{font:17px/1.5 Georgia,"Times New Roman",serif;color:#1d1630;background:#fffdf8;margin:0}
+main{max-width:760px;margin:0 auto;padding:16px 18px 60px}h1{font-size:30px;margin:10px 0 0}h2{font-size:26px;margin:0 0 4px}
+h3{font-size:18px;margin:18px 0 4px;display:flex;align-items:center;gap:8px}h4{font-size:15px;text-transform:uppercase;letter-spacing:.6px;color:#7b2cff;margin:16px 0 4px}
+a{color:#7b2cff}.s{color:#776e8c;font-size:14px}.st{color:#d4a000}.meta{color:#5b5470;margin:0 0 10px}
+.rz{border-top:3px solid #7b2cff;margin-top:34px;padding-top:16px}img.gross{display:block;width:100%;max-height:420px;object-fit:cover;border-radius:12px;margin:8px 0}
+img.klein{width:110px;height:110px;object-fit:cover;border-radius:8px;margin:4px 6px 0 0}img.kb{width:34px;height:34px;object-fit:cover;border-radius:6px}
+ul.zut{list-style:none;padding:0;margin:0}ul.zut li{padding:3px 0;border-bottom:1px solid #eee6f7}ul.zut li.g,p.g{color:#d83a5a;font-weight:bold;border:0;margin:10px 0 2px}
+ol{margin:0;padding-left:26px}ol li{margin:6px 0}.notiz{background:#f3eefc;border-radius:10px;padding:10px}.hoch{text-align:right;font-size:14px}
+.kopf{color:#5b5470;font-size:14px}@media print{.rz{break-before:page;border:0}.hoch{display:none}}
+</style></head><body><main>
+<h1>🍳 Unsere Rezepte</h1><p class="kopf">Stand ${e(stand)} · ${rezepte.length} Rezept${rezepte.length === 1 ? "" : "e"} · gesichert aus der App „Recipes“.<br>
+Wieder einlesen: in der App unten auf der Startseite „Wiederherstellen“ und diese Datei wählen.</p>
+<nav id="inhalt"><h2 style="margin-top:20px">Inhalt</h2>${inhalt}</nav>
+${sortiert.map(rezeptHtml).join("\n")}
+</main>
+<script type="application/json" id="recipes-sicherung">${JSON.stringify(daten).replace(/</g, "\\u003c")}<\/script>
+<script>document.addEventListener("click",function(ev){var a=ev.target.closest&&ev.target.closest("[data-pdf]");if(!a)return;ev.preventDefault();
+var d=JSON.parse(document.getElementById("recipes-sicherung").textContent).pdf[a.getAttribute("data-pdf")];if(!d)return;
+fetch(d).then(function(r){return r.blob()}).then(function(b){location.href=URL.createObjectURL(b)})});<\/script>
+</body></html>`;
+}
+/* Erinnerung: etwas geändert seit der letzten Sicherung, und die ist älter als 14 Tage (oder es gab keine und das
+   älteste Rezept ist so alt). „Später“ = 3 Tage Ruhe. */
+function sicherungFaellig(rezepte, zuletzt, spaeter, jetzt = Date.now()){
+  if(!rezepte.length || (spaeter && spaeter > jetzt)) return false;
+  const neuste = Math.max(...rezepte.map(r => r.geaendert || r.erstellt || 0));
+  if(zuletzt && neuste <= zuletzt) return false;
+  const basis = zuletzt || Math.min(...rezepte.map(r => r.erstellt || r.geaendert || jetzt));
+  return jetzt - basis > 14 * 864e5;
+}
 const datumKurz = t => new Date(t).toLocaleDateString("de-DE", { day: "2-digit", month: "2-digit" });
 function gekochtText(r, jetzt = Date.now()){
   const g = Array.isArray(r.gekocht) ? r.gekocht : [];
@@ -518,7 +611,11 @@ function rezeptZeile(r){
 }
 function liste(){
   const q = $("suche").value.trim(), ids = KATS.map(k => k.id), box = $("liste");
+  const kacheln = !q && !KAT;
+  $("sicherBox").hidden = !kacheln;
+  $("sicherHinweis").hidden = !kacheln || !sicherungFaellig(REZEPTE, lies("recipes_gesichert", 0), lies("recipes_sicher_spaeter", 0));
   if(!REZEPTE.length){
+    $("sicherBox").hidden = false;   // nach einem Totalverlust ist „Wiederherstellen“ genau das, was man braucht
     box.innerHTML = '<div class="leer s">Noch keine Rezepte.<br>Tipp auf <b>+ Rezept</b>: PDF, Screenshot, Video eines Reels oder Link zu einer Rezeptseite.</div>';
     return;
   }
@@ -649,7 +746,7 @@ function rezeptZeigen(){
     ${r.zutaten.some(z => z.menge == null && !istNachGeschmack(z)) ? '<div class="s" style="margin-top:6px">Gelb mit „?“: Menge fehlt. Unter ✎ Bearbeiten eintragen oder „nach Geschmack“ wählen.</div>' : ""}
     <h3>Zubereitung</h3>${schrittListe(r.schritte).map(x => x.ueber != null ? `<div class="grp">${esc(x.ueber)}</div>` : `<ol class="st" start="${x.nr}"><li>${esc(x.text)}</li></ol>`).join("")}
     ${r.notiz ? `<div class="k s">📝 ${esc(r.notiz)}</div>` : ""}
-    <div class="r"><button class="g klein" id="bearb">✎ Bearbeiten</button><button class="g klein" id="loesch">Löschen</button></div>
+    <div class="r"><button class="g klein" id="teilen">📤 Teilen</button><button class="g klein" id="bearb">✎ Bearbeiten</button><button class="g klein" id="loesch">Löschen</button></div>
     <div id="rStand" class="s"></div>`;
   $("zur").onclick = () => zeige("liste");
   $("pm").onclick = () => { if(PERS > 1){ PERS--; rezeptZeigen(); } };
@@ -661,6 +758,11 @@ function rezeptZeigen(){
   };
   $("direktBring").onclick = () => bring(r.titel, r.zutaten.filter(z => !istVorrat(z.name, vorratListe(VORRAT))).map(z => [mengeText(z, f), z.name].filter(Boolean).join(" ")), "rStand");
   $("bearb").onclick = () => bearbeiten(r);
+  $("teilen").onclick = async () => {
+    const text = rezeptText(r, f);
+    if(navigator.share){ try { await navigator.share({ text }); return; } catch(e){ if(e.name === "AbortError") return; } }   // nur text: mit url ließ iMessage den Text weg
+    try { await navigator.clipboard.writeText(text); toast("Rezept kopiert — in Notizen oder einer Nachricht einfügen"); } catch { toast("Teilen geht hier nicht"); }
+  };
   $("kochen").onclick = () => kochen(r, f);
   $("sterne").querySelectorAll("button").forEach(b => b.onclick = () => { const n = +b.dataset.n; bewerten(r, { sterne: n === r.sterne ? 0 : n }); });
   $("merken").onclick = () => bewerten(r, { merken: !r.merken }, r.merken ? "Von der Kochliste genommen" : "🔖 Auf der Kochliste");
@@ -1016,6 +1118,92 @@ async function bring(titel, zeilen, standId){
     $(standId).textContent = ""; location.href = d.link; }
   catch(e){ $(standId).innerHTML = '<span class="f">' + esc(e.message) + "</span>"; }
 }
+
+/* ---- Sicherung: Rezeptbuch erstellen, teilen, wiederherstellen ----
+   Zwei Schritte, weil iOS die Teilen-Leiste nur direkt nach einem Tippen öffnet: erst bauen (Bilder holen dauert),
+   dann „📤 Rezeptbuch sichern“ tippen. */
+let BUCH = null;
+const alsDataUrl = b => new Promise((ok, nein) => { const r = new FileReader(); r.onload = () => ok(r.result); r.onerror = nein; r.readAsDataURL(b); });
+async function buchBauen(){
+  const st = $("sicherStand"); $("sichern").disabled = true; $("teilenZeile").hidden = true; BUCH = null;
+  try {
+    st.textContent = "Hole den aktuellen Stand …"; await laden();
+    const alle = [...REZEPTE.flatMap(r => r.originale || []), ...KATS.filter(k => k.bild).map(k => ({ id: k.bild, typ: "image/jpeg" }))];
+    const bilder = {}, pdf = {}; let fehlt = 0;
+    for(const [i, o] of alle.entries()){
+      st.textContent = "Packe Bilder ein " + (i + 1) + "/" + alle.length + " …";
+      try { const res = await fetch(bildUrl(o)); if(!res.ok) throw new Error(); const b = await res.blob();
+        ((o.typ === "application/pdf" || b.type === "application/pdf") ? pdf : bilder)[o.id] = await alsDataUrl(b); }
+      catch { fehlt++; }
+    }
+    const html = rezeptbuchHtml({ rezepte: REZEPTE, kats: KATS, bilder, pdf });
+    const name = "Rezeptbuch-" + new Date().toLocaleDateString("sv-SE") + ".html";
+    BUCH = new File([html], name, { type: "text/html" });
+    st.innerHTML = "Rezeptbuch fertig: " + REZEPTE.length + " Rezepte, " + (BUCH.size / 1048576).toFixed(1) + " MB" + (fehlt ? ' — <span class="f">' + fehlt + " Bilder fehlten</span>" : "") + ". Jetzt sichern tippen und z. B. „In Dateien sichern“ → iCloud Drive wählen.";
+    $("teilenZeile").hidden = false;
+  } catch(e){ st.innerHTML = '<span class="f">' + esc(e.message) + "</span>"; }
+  $("sichern").disabled = false;
+}
+async function buchTeilen(){
+  if(!BUCH) return;
+  const st = $("sicherStand");
+  if(navigator.canShare && navigator.canShare({ files: [BUCH] })){
+    try { await navigator.share({ files: [BUCH] }); }
+    catch(e){ if(e.name === "AbortError"){ st.textContent = "Abgebrochen — nicht gesichert."; return; } st.innerHTML = '<span class="f">' + esc(e.message) + "</span>"; return; }
+  } else {
+    const a = document.createElement("a"); a.href = URL.createObjectURL(BUCH); a.download = BUCH.name; document.body.appendChild(a); a.click(); a.remove();
+  }
+  schreib("recipes_gesichert", Date.now()); schreib("recipes_sicher_spaeter", 0);
+  st.textContent = "✓ Gesichert (" + BUCH.name + "). Zum Ansehen ohne App: Datei in der Dateien-App antippen.";
+  $("teilenZeile").hidden = true; $("sicherHinweis").hidden = true;
+}
+$("sichern").onclick = buchBauen;
+$("sicherTeilen").onclick = buchTeilen;
+$("sicherJetzt").onclick = () => { $("sicherHinweis").hidden = true; $("sicherBox").scrollIntoView({ behavior: "smooth" }); buchBauen(); };
+$("sicherSpaeter").onclick = () => { schreib("recipes_sicher_spaeter", Date.now() + 3 * 864e5); $("sicherHinweis").hidden = true; };
+$("wieder").onclick = () => { $("wiederDatei").value = ""; $("wiederDatei").click(); };
+$("wiederDatei").onchange = async () => {
+  const f = $("wiederDatei").files[0], st = $("sicherStand"); if(!f) return;
+  $("wiederDatei").value = "";   // dieselbe Datei nochmal wählen soll wieder auslösen
+  try {
+    st.textContent = "Lese die Sicherung …";
+    const doc = new DOMParser().parseFromString(await f.text(), "text/html");
+    const el = doc.getElementById("recipes-sicherung");
+    if(!el) throw new Error("Das ist kein Rezeptbuch dieser App.");
+    const d = JSON.parse(el.textContent);
+    const daten = { ...(d.pdf || {}) }; doc.querySelectorAll("img[data-id]").forEach(i => { daten[i.getAttribute("data-id")] = i.getAttribute("src"); });
+    await laden();
+    const da = new Set(REZEPTE.map(r => r.id)), fehlen = (d.rezepte || []).filter(r => !da.has(r.id));
+    const neueKats = (d.kategorien || []).filter(k => !KATS.some(x => x.id === k.id));
+    const vom = new Date(d.erstellt).toLocaleDateString("de-DE");
+    if(!fehlen.length && !neueKats.length){ st.textContent = "Alles aus der Sicherung vom " + vom + " ist schon da — nichts zu tun."; return; }
+    if(!confirm("Sicherung vom " + vom + " mit " + (d.rezepte || []).length + " Rezepten.\n\n" + fehlen.length + " Rezepte fehlen hier und werden zurückgeholt" +
+      (neueKats.length ? ", dazu " + neueKats.length + " Kategorien" : "") + ".\nWas schon da ist, bleibt unverändert.")) { st.textContent = ""; return; }
+    const blob = async u => (await fetch(u)).blob();
+    let probleme = 0;
+    if(neueKats.length){
+      for(const k of neueKats){
+        if(k.bild && daten[k.bild]){ try { const b = await blob(daten[k.bild]); k.bild = (await api("/api/kategorie-bild?typ=" + encodeURIComponent(b.type || "image/jpeg"), { method: "PUT", body: b })).d.id; } catch { delete k.bild; probleme++; } }
+        else delete k.bild;
+      }
+      const { d: kd } = await api("/api/kategorien", { method: "PUT", headers: { "content-type": "application/json" }, body: JSON.stringify({ kategorien: [...KATS, ...neueKats] }) });
+      KATS = kd.kategorien; schreib("recipes_kats", KATS);
+    }
+    for(const [i, r] of fehlen.entries()){
+      st.textContent = "Hole Rezept " + (i + 1) + "/" + fehlen.length + " zurück: " + r.titel + " …";
+      try { await api("/api/wiederherstellen", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ rezept: r }) }); }
+      catch { probleme++; continue; }
+      for(const o of r.originale || []){
+        if(!daten[o.id]){ probleme++; continue; }
+        try { const b = await blob(daten[o.id]);
+          await api("/api/original/" + encodeURIComponent(r.id) + "?typ=" + encodeURIComponent(o.typ) + "&name=" + encodeURIComponent(o.name || "") + "&wieder=1" + (r.vorschau === o.id ? "&vorschau=1" : ""), { method: "PUT", body: b }); }
+        catch { probleme++; }
+      }
+    }
+    await laden();
+    st.innerHTML = "✓ " + fehlen.length + " Rezepte zurückgeholt" + (neueKats.length ? ", " + neueKats.length + " Kategorien" : "") + "." + (probleme ? ' <span class="f">' + probleme + " Teile (meist Bilder) gingen nicht.</span>" : "");
+  } catch(e){ st.innerHTML = '<span class="f">' + esc(e.message) + "</span>"; }
+};
 
 /* ---- Küchenmodus (vom Nutzer gewünscht): ein Schritt groß, Timer aus dem Text, Zutaten abhaken, Bildschirm bleibt an ----
    Timer laufen weiter, wenn man umblättert oder den Küchenmodus schließt; die Restzeit kommt aus der Endzeit,
