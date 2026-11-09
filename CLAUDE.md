@@ -213,7 +213,7 @@ Kachelbild, Vorschau, Original löschen, Bild von Adresse; Logik: `timerAus`, `r
 zuweisen, Bild aus Fotos, „Kein Bild“, ✕, Küchenmodus mit Timer, Kategorien bearbeiten mit Fokus-Prüfung und Umzug).
 Gegenproben: Seite nicht lesen, Umzug ignorieren, gewählte Vorschau ignorieren — schlagen jeweils an.
 
-## Memo vom Nutzer, für später (08.11.2026) — 1, 4, 5, 6 am 09.11. gebaut (siehe oben); offen: 2 und 3
+## Memo vom Nutzer, für später (08.11.2026) — 1, 4, 5, 6 am 09.11. gebaut (siehe oben); 2 und 3 vom Nutzer erledigt („wenn es sie gibt, ist so ok“, 09.11.) — nur bauen, wenn er etwas vermisst
 
 1. **Rezeptkategorien** (z. B. Vorspeise, Hauptgericht, Dessert, Backen; Filter in der Liste). Die KI könnte beim Import
    eine vorschlagen. **Vom Nutzer (09.11.): die Kategorien selbst sollen editierbar sein** (eigene anlegen, umbenennen,
