@@ -262,7 +262,7 @@ WEB["https://yummix.example/gateau-royal/"] = () => new Response(ldSeite, { head
 const ld0 = W.rezeptAusLd(ldSeite);
 ok(ld0?.name === "G&acirc;teau royal" && W.ldBild(ld0) === "https://yummix.example/gateau.jpg", "schema.org/Recipe in @graph gefunden, Bild aus ImageObject");
 const ldt = W.ldAlsText(ld0);
-ok(ldt.includes("Titel: Gâteau royal") && ldt.includes("- 3 œufs") && ldt.includes("1. [Pâte]") && ldt.includes("2. Mélanger farine et sucre.") && ldt.includes("75 Minuten") && ldt.includes("Ergibt: 8 / 8 parts"), "Rezeptdaten als Text: Zutaten, Abschnitte, Zeit, Entities");
+ok(ldt.includes("Titel: Gâteau royal") && ldt.includes("- 3 œufs") && ldt.includes("Abschnitt Pâte:\n1. Mélanger farine et sucre.") && ldt.includes("2. Cuire 30 min") && ldt.includes("75 Minuten") && ldt.includes("Ergibt: 8 / 8 parts"), "Rezeptdaten als Text: Zutaten, Abschnitte, Zeit, Entities");
 ok(W.linksAus("Schau mal: https://a.example/x). und https://a.example/x").join() === "https://a.example/x", "Links ohne Satzzeichen, doppelt nur einmal");
 ok(W.SOZIAL.test("https://www.instagram.com/reel/abc") && W.SOZIAL.test("https://fb.watch/xy") && W.SOZIAL.test("https://vm.tiktok.com/z") && !W.SOZIAL.test("https://www.chefkoch.de/x") && !W.SOZIAL.test("https://notfacebook.com.example/"), "soziale Netzwerke erkannt");
 G.antwort = { titel: "Gâteau royal", portionen: 8, zutaten: [{ name: "Mehl", menge: 200, einheit: "g" }], schritte: ["Mischen."], kategorien: ["backen", "gibtsnicht", "dessert", "snack"] };
@@ -291,6 +291,7 @@ ok((await call("/api/rezept", { ...auftrag, body: JSON.stringify({ text: "https:
 WEB["https://pdf.example/a.pdf"] = () => new Response("%PDF", { headers: { "content-type": "application/pdf" } });
 ok((await call("/api/rezept", { ...auftrag, body: JSON.stringify({ text: "https://pdf.example/a.pdf" }) })).d?.fehler?.includes("keine Webseite"), "PDF-Link: keine Webseite");
 ok(W.AUFTRAG.includes("NICHT aus eigenem Wissen nachbauen"), "Auftrag verbietet Nachbauen aus dem Namen");
+ok(W.AUFTRAG.includes('"Für den Teig:"') && W.AUFTRAG.includes("Doppelpunkt am Ende"), "Auftrag: Abschnitte als Zeile mit Doppelpunkt (App zeigt sie als Überschrift)");
 
 // Kategorien
 const k0 = await call("/api/kategorien");

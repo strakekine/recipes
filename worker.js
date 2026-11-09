@@ -42,6 +42,7 @@ Regeln:
 - zeit_min: Gesamtzeit in Minuten, wenn erkennbar, sonst null.
 - bild_sekunde: nur bei einem Video — die Sekunde (vom Anfang des Videos gezählt), in der das fertige Gericht am schönsten und am größten zu sehen ist, möglichst ohne eingeblendeten Text. Das wird das Vorschaubild. Ohne Video oder ohne fertiges Gericht: null.
 - schritte: kurz und klar, ein Arbeitsgang je Schritt, Zeiten und Temperaturen wörtlich übernehmen ("10 Minuten köcheln").
+- Teilt das Rezept die Zubereitung in Abschnitte (z. B. Teig, Füllung, Sauce, Glasur), dann kommt vor die Schritte jedes Abschnitts eine eigene Zeile in schritte: nur der kurze Name mit Doppelpunkt am Ende ("Für den Teig:", "Sauce:"), ohne Nummer, ohne weiteren Text. Die App zeigt solche Zeilen als Überschrift. Keine Abschnitte erfinden, wenn das Rezept einfach durchläuft; normale Schritte enden nie mit Doppelpunkt.
 - Kommt der Inhalt einer Webseite mit (strukturierte Rezeptdaten oder Seitentext), übernimm Zutaten, Mengen und Schritte genau von dort.
 - Steht nur ein Link oder ein Rezeptname da, ohne den Inhalt, dann das Rezept NICHT aus eigenem Wissen nachbauen: titel leer und in der notiz sagen, dass der Inhalt fehlt.
 - kategorien: nur, wenn unten Kategorien zur Auswahl stehen — 1 oder 2 passende ids von dort, sonst leer.
@@ -193,11 +194,12 @@ export function ldAlsText(ld){
     if(!s) return;
     if(typeof s === "string"){ for(const t of s.split(/\n+/)) if(ohneTags(t)) schritte.push(ohneTags(t)); return; }
     if(Array.isArray(s)){ for(const x of s) lauf(x, abschnitt); return; }
-    if(istTyp(s, "howtosection")){ schritte.push("[" + ohneTags(s.name) + "]"); lauf(s.itemListElement, true); return; }
+    if(istTyp(s, "howtosection")){ schritte.push({ abschnitt: ohneTags(s.name) }); lauf(s.itemListElement, true); return; }
     const t = ohneTags(s.text || s.name || ""); if(t) schritte.push(t);
   };
   lauf(ld.recipeInstructions);
-  z.push("Schritte:"); schritte.forEach((t, i) => z.push((i + 1) + ". " + t));
+  z.push("Schritte:"); let nr = 0;
+  for(const t of schritte) z.push(typeof t === "string" ? (++nr) + ". " + t : "Abschnitt " + t.abschnitt + ":");
   const besch = ohneTags(ld.description); if(besch) z.push("Beschreibung: " + besch.slice(0, 500));
   return z.join("\n").slice(0, 30000);
 }
@@ -813,7 +815,7 @@ label.file{display:block;border:2px dashed var(--l);border-radius:12px;padding:1
 <div class="k" id="ergebnis" hidden></div>
 <div class="k"><b>Gespeichert</b><div id="liste" class="s">–</div></div>
 <details class="k" id="protK"><summary><b>Protokoll</b> <span class="s">(was der Worker zuletzt gemacht hat)</span></summary><div id="prot" class="s">–</div></details>
-<div class="s" style="text-align:center">Fassung 09.11.2026 b</div>
+<div class="s" style="text-align:center">Fassung 09.11.2026 c</div>
 </main><script>
 const $=id=>document.getElementById(id);
 let CODE="";try{CODE=localStorage.getItem("recipes_code")||""}catch{}

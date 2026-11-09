@@ -233,8 +233,9 @@ Zeichen) mit Doppelpunkt am Ende** = Überschrift (`istUeberschrift`, `schrittLi
 Nummer; Schritte werden **durchgehend** nummeriert (je Schritt ein `<ol start>`), damit „Schritt 4 von 7“ im
 Küchenmodus stimmt. Küchenmodus überspringt Überschriften und zeigt sie als Beschriftung („Sauce · Schritt 2“). Lange
 Sätze mit Doppelpunkt am Ende bleiben Schritte. Seit Fassung d (vom Nutzer: „bei den Zutaten gibt es ja + Überschrift“) auch hier ein Knopf **„+ Überschrift“** unter dem Schritte-Feld: fügt „Überschrift:“ als eigene Zeile an der Schreibmarke ein (gemerkt beim Verlassen des Felds, sonst am Ende) und markiert das Wort zum Überschreiben. Gespeichert wird
-unverändert als Zeile in `schritte` — kein Worker-Umbau. Die KI liefert Abschnitte noch nicht so; bei Bedarf im
-`AUFTRAG` ergänzen (dann Worker neu einfügen).
+unverändert als Zeile in `schritte` — kein Worker-Umbau. **Worker Fassung „09.11.2026 c“ (vom Nutzer: „bring es der KI bei“):** `AUFTRAG` verlangt bei Abschnitten eine eigene
+Zeile „Name:“ vor deren Schritten, keine erfundenen Abschnitte; `ldAlsText` gibt HowToSection als „Abschnitt Name:“ ohne
+Nummer weiter (vorher „1. [Name]“). **Worker neu einfügen nötig.**
 
 ## Memo vom Nutzer, für später (08.11.2026) — 1, 4, 5, 6 am 09.11. gebaut (siehe oben); 2 und 3 vom Nutzer erledigt („wenn es sie gibt, ist so ok“, 09.11.) — nur bauen, wenn er etwas vermisst
 
