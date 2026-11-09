@@ -169,6 +169,11 @@ gesperrt“ …) — beim nächsten Fehlschlag am iPhone diesen Text erfragen.
    eine vorschlagen. **Vom Nutzer (09.11.): die Kategorien selbst sollen editierbar sein** (eigene anlegen, umbenennen,
    löschen) — also eine gemeinsame Kategorienliste auf dem Server, nicht fest im Code; beim Löschen einer Kategorie
    fragen, was mit ihren Rezepten passiert.
+   **Gestaltung (vom Nutzer, 09.11.):** Startseite = **Kacheln je Kategorie** (Name + kleines Bild), Tippen öffnet die
+   Rezeptliste dieser Kategorie. Vorschlag dazu (dem Nutzer so gesagt): Bild der Kachel automatisch = Vorschaubild des
+   neuesten Rezepts der Kategorie, beim Bearbeiten der Kategorie durch ein eigenes Bild aus der Mediathek ersetzbar
+   (gleicher Weg wie Punkt 6); ohne Bild ein Pop-Art-Symbol/Emoji. Dazu eine Kachel „Alle Rezepte“ und die Suche oben
+   über allen Kacheln.
 2. **Suche** — gibt es schon (Titel und Zutaten, Wörter mit Leerzeichen = alle müssen passen); was dem Nutzer fehlt,
    vor dem Bauen erfragen (Kategorien? Filter wie „schnell“, „vegetarisch“? Suche in Schritten/Notiz?).
 3. **Rezept von Hand eingeben** — „+ Rezept → Von Hand eintippen“ gibt es schon (gleicher Editor wie die KI-Vorschau);
