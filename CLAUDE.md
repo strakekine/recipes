@@ -264,6 +264,18 @@ fürs Anzeigen schon zwischengespeichert (`max-age=86400`, damals ohne CORS-Kopf
 gesperrt. Seit Fassung f holt `buchBauen` jedes Bild frisch (`?frisch=<Zeit>`, `cache: "no-store"`) und nennt den Grund,
 wenn eins fehlt. Ob der Worker zu dem Zeitpunkt schon auf „d“ war, war von hier nicht prüfbar (Proxy sperrt den Worker).
 
+## Still selbst aktualisieren (09.11.2026, App Fassung „09.11.2026 g“, nur App)
+
+Vom Nutzer: man wischt die App nicht immer weg, sondern wechselt nur zurück — dann bliebe die alte Fassung (Home-Bildschirm-
+Apps laden beim Zurückwechseln nicht neu). Einen Knopf „Neue Fassung laden“ wollte er nicht. Jetzt: war die App **über
+30 min im Hintergrund**, holt `neueFassung()` die Seite frisch (`?pruefen=<Zeit>`, `no-store`) und vergleicht `FASSUNG`;
+ist sie neuer, `location.replace(…?v=<Fassung>)` (neue Adresse = am Zwischenspeicher vorbei). **Nicht**, solange etwas in
+Arbeit ist (`IN_ARBEIT`: Bearbeiten, Neu/Import, Kategorien, Küchenmodus, Rezeptbuch gebaut, fokussiertes Feld). Vorher
+merkt sie Ansicht, offenes Rezept, Kategorie und Personenzahl in `sessionStorage` (`recipes_weiter`) und macht nach dem
+Laden dort weiter. Test: gleiche Fassung → nichts, Bearbeiten → nichts, neue Fassung → neu geladen, Rezept samt
+Personenzahl wieder offen. **Folge für Claude:** `FASSUNG` muss bei jeder Änderung hochgezählt werden — sonst lädt die App
+nie neu.
+
 ## Memo vom Nutzer, für später (08.11.2026) — 1, 4, 5, 6 am 09.11. gebaut (siehe oben); 2 und 3 vom Nutzer erledigt („wenn es sie gibt, ist so ok“, 09.11.) — nur bauen, wenn er etwas vermisst
 
 1. **Rezeptkategorien** (z. B. Vorspeise, Hauptgericht, Dessert, Backen; Filter in der Liste). Die KI könnte beim Import

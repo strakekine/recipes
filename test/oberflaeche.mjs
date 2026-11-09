@@ -46,7 +46,9 @@ await p.route("https://recipes.rjtp6r9s9h.workers.dev/**", async route => {
 });
 // Unter der echten Adresse ausliefern: der Worker gibt CORS nur für strakekine.github.io frei.
 const APP = "https://strakekine.github.io/recipes/";
-await p.route(APP, route => route.fulfill({ status: 200, contentType: "text/html; charset=utf-8", body: readFileSync(new URL("../index.html", import.meta.url)) }));
+let ANDERE_FASSUNG = "";   // zum Prüfen des stillen Neuladens: Server liefert eine neuere Fassung
+await p.route(u => u.href.startsWith(APP), route => route.fulfill({ status: 200, contentType: "text/html; charset=utf-8",
+  body: ANDERE_FASSUNG ? readFileSync(new URL("../index.html", import.meta.url), "utf8").replace(/const FASSUNG = "[^"]+"/, 'const FASSUNG = "' + ANDERE_FASSUNG + '"') : readFileSync(new URL("../index.html", import.meta.url)) }));
 await p.route("https://api.getbring.com/**", route => { bringLink = route.request().url(); route.fulfill({ status: 200, body: "Bring!" }); });
 await p.goto(APP);
 
@@ -148,6 +150,19 @@ ok(JSON.stringify(zub).includes('"# Für die Gnocchi","1. Gnocchi braten.","# Sa
 await p.click("#kochen"); await p.click("#kNach");
 ok((await p.textContent("#kSchritt .nr")) === "Sauce · Schritt 2" && (await p.textContent("#kPos")) === "2 / 2", "Küchenmodus: Überschrift als Beschriftung, nicht als eigener Schritt");
 await p.click("#kZu"); await p.click("#zur");
+
+
+// Still aktualisieren nach langer Zeit im Hintergrund
+await p.click("#liste .li:has-text('Gnocchi')"); await p.click("#pp");
+ok(await p.evaluate(() => neueFassung()) === false, "gleiche Fassung: kein Neuladen");
+await p.click("#bearb"); ANDERE_FASSUNG = "99.99.2099 z";
+ok(await p.evaluate(() => neueFassung()) === false, "beim Bearbeiten: kein Neuladen, auch bei neuer Fassung");
+await p.click("#vEdit [data-zurueck] >> nth=0");
+const persVor = await p.textContent("#vRezept .pz b");
+await Promise.all([p.waitForURL(/\?v=99\.99\.2099/), p.evaluate(() => neueFassung())]);
+await p.waitForSelector("#vRezept:not([hidden]) h2");
+ok((await p.textContent("#fassung")) === "99.99.2099 z" && (await p.textContent("#vRezept h2")).includes("Gnocchi") && (await p.textContent("#vRezept .pz b")) === persVor, "neue Fassung: still neu geladen, gleiches Rezept und Personenzahl wieder offen");
+ANDERE_FASSUNG = ""; await p.goto(APP); await p.waitForSelector(".kachel.alle"); await p.click(".kachel.alle");
 
 // Sterne und Kochliste
 await p.click("#liste .li:has-text('Gnocchi')");

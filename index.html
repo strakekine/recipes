@@ -238,7 +238,7 @@ button.g.merkt{background:var(--pink);color:#fff;border-color:var(--kante);box-s
 <script>
 /* ==== Logik ==== (kein DOM; test/rezepte.mjs schneidet diesen Block aus) */
 const WORKER = "https://recipes.rjtp6r9s9h.workers.dev";
-const FASSUNG = "09.11.2026 f";
+const FASSUNG = "09.11.2026 g";
 const GAENGE = ["Obst & Gemüse", "Brot & Backwaren", "Kühlregal", "Fleisch & Fisch", "Tiefkühl",
   "Nudeln, Reis & Trockenes", "Konserven & Gläser", "Gewürze, Öl & Saucen", "Backzutaten", "Getränke", "Sonstiges"];
 const EINHEITEN = ["g", "kg", "ml", "l", "EL", "TL", "Prise", "Msp", "Stück", "Dose", "Bund", "Zehe", "Becher", "Pck", "Scheibe", "Handvoll"];
@@ -1330,8 +1330,38 @@ $("codeOk").onclick = async () => {
 if(!CODE) $("codeK").hidden = false;
 zeige("liste"); ekZahl();
 if(CODE) laden();
-document.addEventListener("visibilitychange", () => {
-  if(document.hidden) return;
+/* Nach einem stillen Neuladen dort weitermachen, wo man war (Rezept, Kategorie, Einkauf). */
+try {
+  const st = JSON.parse(sessionStorage.getItem("recipes_weiter") || "null"); sessionStorage.removeItem("recipes_weiter");
+  if(st){
+    KAT = st.kat || null;
+    const r = st.offen && REZEPTE.find(x => x.id === st.offen);
+    if(st.ansicht === "rezept" && r){ OFFEN = r; PERS = st.pers || r.portionen || 2; zeige("rezept"); }
+    else zeige(st.ansicht === "einkauf" ? "einkauf" : "liste");
+  }
+} catch {}
+
+/* Selbst aktualisieren (vom Nutzer, 09.11.): Eine Home-Bildschirm-App lädt beim Zurückwechseln nicht neu und bliebe
+   tagelang auf der alten Fassung. War sie über 30 min im Hintergrund, schaut sie nach, ob es eine neue Fassung gibt, und
+   lädt dann still neu — nur, wenn gerade nichts in Arbeit ist (Bearbeiten, Import, Küchenmodus, fertiges Rezeptbuch). */
+let WEG_SEIT = 0;
+const IN_ARBEIT = () => !["liste", "rezept", "einkauf"].includes(ANSICHT) || !$("kueche").hidden || !!BUCH ||
+  $("los").disabled || $("sichern").disabled || ["INPUT", "TEXTAREA", "SELECT"].includes(document.activeElement?.tagName);
+async function neueFassung(){
+  if(IN_ARBEIT()) return false;
+  try {
+    const t = await (await fetch(location.pathname + "?pruefen=" + Date.now(), { cache: "no-store" })).text();
+    const f = (t.match(/const FASSUNG = "([^"]+)"/) || [])[1];
+    if(!f || f === FASSUNG || IN_ARBEIT()) return false;
+    try { sessionStorage.setItem("recipes_weiter", JSON.stringify({ ansicht: ANSICHT, offen: OFFEN?.id, kat: KAT, pers: PERS })); } catch {}
+    location.replace(location.pathname + "?v=" + encodeURIComponent(f));   // neue Adresse = am Zwischenspeicher vorbei
+    return true;
+  } catch { return false; }
+}
+document.addEventListener("visibilitychange", async () => {
+  if(document.hidden){ WEG_SEIT = Date.now(); return; }
+  const lange = WEG_SEIT && Date.now() - WEG_SEIT > 30 * 60e3; WEG_SEIT = 0;
+  if(lange && await neueFassung()) return;
   if(!$("kueche").hidden){ wachHalten(); kTimer(); }   // iOS gibt den Wake Lock im Hintergrund frei
   else if(CODE && ANSICHT === "liste") laden();
 });
