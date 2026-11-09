@@ -259,6 +259,10 @@ etwas geändert und die Sicherung bzw. das älteste Rezept älter als 14 Tage; �
 **„📤 Teilen“** im Rezept: `rezeptText` (umgerechnet auf die eingestellte Menge) über `navigator.share({text})` — nur Text,
 kein `url` (iMessage ließ sonst den Text weg); sonst Zwischenablage. Am iPhone noch nicht ausprobiert (Teilen der großen
 Datei, Öffnen in der Dateien-App).
+**Befund vom Nutzer (09.11., Fassung e):** „4 Rezepte, 0.1 MB — 3 Bilder fehlten“. Vermutete Ursache: Safari hatte die Bilder
+fürs Anzeigen schon zwischengespeichert (`max-age=86400`, damals ohne CORS-Kopf) und nahm diese Kopie auch für `fetch` —
+gesperrt. Seit Fassung f holt `buchBauen` jedes Bild frisch (`?frisch=<Zeit>`, `cache: "no-store"`) und nennt den Grund,
+wenn eins fehlt. Ob der Worker zu dem Zeitpunkt schon auf „d“ war, war von hier nicht prüfbar (Proxy sperrt den Worker).
 
 ## Memo vom Nutzer, für später (08.11.2026) — 1, 4, 5, 6 am 09.11. gebaut (siehe oben); 2 und 3 vom Nutzer erledigt („wenn es sie gibt, ist so ok“, 09.11.) — nur bauen, wenn er etwas vermisst
 

@@ -238,7 +238,7 @@ button.g.merkt{background:var(--pink);color:#fff;border-color:var(--kante);box-s
 <script>
 /* ==== Logik ==== (kein DOM; test/rezepte.mjs schneidet diesen Block aus) */
 const WORKER = "https://recipes.rjtp6r9s9h.workers.dev";
-const FASSUNG = "09.11.2026 e";
+const FASSUNG = "09.11.2026 f";
 const GAENGE = ["Obst & Gemüse", "Brot & Backwaren", "Kühlregal", "Fleisch & Fisch", "Tiefkühl",
   "Nudeln, Reis & Trockenes", "Konserven & Gläser", "Gewürze, Öl & Saucen", "Backzutaten", "Getränke", "Sonstiges"];
 const EINHEITEN = ["g", "kg", "ml", "l", "EL", "TL", "Prise", "Msp", "Stück", "Dose", "Bund", "Zehe", "Becher", "Pck", "Scheibe", "Handvoll"];
@@ -1129,17 +1129,21 @@ async function buchBauen(){
   try {
     st.textContent = "Hole den aktuellen Stand …"; await laden();
     const alle = [...REZEPTE.flatMap(r => r.originale || []), ...KATS.filter(k => k.bild).map(k => ({ id: k.bild, typ: "image/jpeg" }))];
-    const bilder = {}, pdf = {}; let fehlt = 0;
+    const bilder = {}, pdf = {}; let fehlt = 0, grund = "";
     for(const [i, o] of alle.entries()){
       st.textContent = "Packe Bilder ein " + (i + 1) + "/" + alle.length + " …";
-      try { const res = await fetch(bildUrl(o)); if(!res.ok) throw new Error(); const b = await res.blob();
+      /* Immer frisch holen: Safari hat die Bilder fürs Anzeigen schon im Zwischenspeicher, ohne CORS-Freigabe —
+         mit dieser Kopie darf die App sie nicht lesen (09.11.: „3 Bilder fehlten“). */
+      try { const res = await fetch(bildUrl(o) + "?frisch=" + Date.now(), { cache: "no-store" });
+        if(!res.ok) throw new Error("Server antwortet " + res.status);
+        const b = await res.blob();
         ((o.typ === "application/pdf" || b.type === "application/pdf") ? pdf : bilder)[o.id] = await alsDataUrl(b); }
-      catch { fehlt++; }
+      catch(e){ fehlt++; grund = grund || (/fetch|load|network/i.test(e.message) ? "Bild gesperrt — ist der Worker auf Fassung 09.11.2026 d?" : e.message); }
     }
     const html = rezeptbuchHtml({ rezepte: REZEPTE, kats: KATS, bilder, pdf });
     const name = "Rezeptbuch-" + new Date().toLocaleDateString("sv-SE") + ".html";
     BUCH = new File([html], name, { type: "text/html" });
-    st.innerHTML = "Rezeptbuch fertig: " + REZEPTE.length + " Rezepte, " + (BUCH.size / 1048576).toFixed(1) + " MB" + (fehlt ? ' — <span class="f">' + fehlt + " Bilder fehlten</span>" : "") + ". Jetzt sichern tippen und z. B. „In Dateien sichern“ → iCloud Drive wählen.";
+    st.innerHTML = "Rezeptbuch fertig: " + REZEPTE.length + " Rezepte, " + (BUCH.size / 1048576).toFixed(1) + " MB" + (fehlt ? ' — <span class="f">' + fehlt + " Bilder fehlten (" + esc(grund) + ")</span>" : "") + ". Jetzt sichern tippen und z. B. „In Dateien sichern“ → iCloud Drive wählen.";
     $("teilenZeile").hidden = false;
   } catch(e){ st.innerHTML = '<span class="f">' + esc(e.message) + "</span>"; }
   $("sichern").disabled = false;
