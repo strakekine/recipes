@@ -80,6 +80,11 @@ details summary{cursor:pointer;color:var(--m)}
 .zr select{width:104px;flex:none;padding:9px 22px 9px 8px;font-size:15px}
 .zr .zn{flex:1;min-width:0;padding:9px 8px}
 .zr .x{flex:none;padding:7px 9px;box-shadow:none;background:transparent;color:var(--m);border-color:var(--l)}
+/* Reihenfolge ändern: Menge/Einheit/✕ weg, dafür ↑ ↓ (auf dem iPhone ist neben allem anderen kein Platz dafür) */
+.zr .mv{display:none;flex:none;padding:7px 12px;box-shadow:none;font-size:16px}
+#zutEd.sortieren .zr .mv{display:inline-block}
+#zutEd.sortieren .zm,#zutEd.sortieren select,#zutEd.sortieren .x{display:none}
+#zutEd.sortieren .zn{background:transparent;border-color:transparent}
 .zr.gr .zn{font-weight:800;color:var(--pink)}
 .zr.ngz .zm{display:none}.zr.ngz select{width:170px;color:var(--ng)}
 .zkopf{display:flex;gap:6px;font-size:12px;color:var(--m);margin-top:4px}.zkopf span:nth-child(1){width:60px;text-align:center}.zkopf span:nth-child(2){width:104px}
@@ -197,7 +202,7 @@ button.g.merkt{background:var(--pink);color:#fff;border-color:var(--kante);box-s
       <div style="margin-top:14px"><div class="s"><b>Zutaten</b></div>
         <div class="zkopf" id="zKopf"><span>Menge</span><span>Einheit</span><span>Zutat</span></div>
         <div id="zutEd"></div>
-        <div class="r"><button class="g klein" id="zPlus">+ Zutat</button><button class="g klein" id="gPlus">+ Überschrift</button><button class="g klein" id="zText">Als Text bearbeiten</button></div>
+        <div class="r"><button class="g klein" id="zPlus">+ Zutat</button><button class="g klein" id="gPlus">+ Überschrift</button><button class="g klein" id="zSort">↕ Reihenfolge ändern</button><button class="g klein" id="zText">Als Text bearbeiten</button></div>
         <div id="zTextBox" hidden><div class="s" style="margin:8px 0 4px">Eine Zutat je Zeile, Zahl vorne („200 g Mehl“). Zeile mit Doppelpunkt am Ende = Überschrift.</div><textarea id="eZut" style="min-height:200px"></textarea></div>
       </div>
       <div style="margin-top:10px"><div class="s">Schritte — einer je Zeile</div><textarea id="eSchr" style="min-height:160px"></textarea>
@@ -238,7 +243,7 @@ button.g.merkt{background:var(--pink);color:#fff;border-color:var(--kante);box-s
 <script>
 /* ==== Logik ==== (kein DOM; test/rezepte.mjs schneidet diesen Block aus) */
 const WORKER = "https://recipes.rjtp6r9s9h.workers.dev";
-const FASSUNG = "09.11.2026 h";
+const FASSUNG = "10.11.2026 a";
 const GAENGE = ["Obst & Gemüse", "Brot & Backwaren", "Kühlregal", "Fleisch & Fisch", "Tiefkühl",
   "Nudeln, Reis & Trockenes", "Konserven & Gläser", "Gewürze, Öl & Saucen", "Backzutaten", "Getränke", "Sonstiges"];
 const EINHEITEN = ["g", "kg", "ml", "l", "EL", "TL", "Prise", "Msp", "Stück", "Dose", "Bund", "Zehe", "Becher", "Pck", "Scheibe", "Handvoll"];
@@ -871,19 +876,35 @@ function zeileEl(z = {}){
   const ng = istNachGeschmack(z); if(ng) d.classList.add("ngz");
   d.innerHTML = `<input class="zm" type="text" inputmode="decimal" placeholder="?" value="${esc(mengeEingabe(z))}" ${ng ? "disabled" : ""}>
     <select>${EINHEIT_MENU.map(([v, t]) => `<option value="${v}" ${(ng ? "ng" : z.einheit || "") === v ? "selected" : ""}>${esc(t)}</option>`).join("")}</select>
-    <input class="zn" type="text" placeholder="Zutat" value="${esc(z.name || "")}"><button class="x" title="Entfernen">✕</button>`;
+    <input class="zn" type="text" placeholder="Zutat" value="${esc(z.name || "")}"><button class="x" title="Entfernen">✕</button>${PFEILE}`;
   const [m, sel] = [d.querySelector(".zm"), d.querySelector("select")];
   sel.onchange = () => { m.disabled = sel.value === "ng"; d.classList.toggle("ngz", m.disabled); if(m.disabled) m.value = ""; };
-  d.querySelector(".x").onclick = () => d.remove();
+  d.querySelector(".x").onclick = () => d.remove(); pfeileAn(d);
   return d;
 }
+/* ↑ ↓ verschieben die Zeile im DOM (kein Neuaufbau). Gruppe = letzte Überschrift darüber, beim Speichern gelesen. */
+const PFEILE = '<button class="mv" data-r="-1" type="button" title="Nach oben">↑</button><button class="mv" data-r="1" type="button" title="Nach unten">↓</button>';
+function pfeileAn(d){
+  d.querySelectorAll(".mv").forEach(b => b.onclick = () => {
+    if(b.dataset.r === "-1"){ if(d.previousElementSibling) d.parentNode.insertBefore(d, d.previousElementSibling); }
+    else if(d.nextElementSibling) d.parentNode.insertBefore(d.nextElementSibling, d);
+  });
+}
+function sortModus(an){
+  $("zutEd").classList.toggle("sortieren", an);
+  $("zutEd").querySelectorAll(".zn").forEach(i => { i.readOnly = an; });
+  $("zPlus").hidden = an; $("gPlus").hidden = an; $("zText").hidden = an; $("zKopf").hidden = an;
+  $("zSort").textContent = an ? "✓ Fertig" : "↕ Reihenfolge ändern";
+}
+$("zSort").onclick = () => sortModus(!$("zutEd").classList.contains("sortieren"));
 function gruppeEl(name = ""){
   const d = document.createElement("div"); d.className = "zr gr";
-  d.innerHTML = `<input class="zn" type="text" placeholder="Überschrift, z. B. Für die Sauce" value="${esc(name)}"><button class="x" title="Entfernen">✕</button>`;
-  d.querySelector(".x").onclick = () => d.remove();
+  d.innerHTML = `<input class="zn" type="text" placeholder="Überschrift, z. B. Für die Sauce" value="${esc(name)}"><button class="x" title="Entfernen">✕</button>${PFEILE}`;
+  d.querySelector(".x").onclick = () => d.remove(); pfeileAn(d);
   return d;
 }
 function editorFuellen(zutaten){
+  sortModus(false);
   const box = $("zutEd"); box.textContent = ""; let g = "";
   for(const z of zutaten){ if((z.gruppe || "") !== g){ g = z.gruppe || ""; if(g) box.appendChild(gruppeEl(g)); } box.appendChild(zeileEl(z)); }
   if(!zutaten.length) box.appendChild(zeileEl());
@@ -899,7 +920,7 @@ function editorLesen(){
 }
 function textModus(an){
   ZTEXT = an; $("zTextBox").hidden = !an; $("zutEd").hidden = an; $("zKopf").hidden = an;
-  $("zPlus").hidden = an; $("gPlus").hidden = an; $("zText").textContent = an ? "Zurück zu den Feldern" : "Als Text bearbeiten";
+  $("zPlus").hidden = an; $("gPlus").hidden = an; $("zSort").hidden = an; $("zText").textContent = an ? "Zurück zu den Feldern" : "Als Text bearbeiten";
 }
 /* Überschrift in die Zubereitung: neue Zeile „Überschrift:“ an der Schreibmarke (bzw. am Ende), das Wort markiert,
    damit man es gleich überschreibt. Gespeichert wird es als Zeile mit Doppelpunkt (siehe schrittListe). */

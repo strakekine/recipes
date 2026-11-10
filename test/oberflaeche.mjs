@@ -152,6 +152,25 @@ ok((await p.textContent("#kSchritt .nr")) === "Sauce · Schritt 2" && (await p.t
 await p.click("#kZu"); await p.click("#zur");
 
 
+
+// Zutaten: vergessene Überschrift nachträglich nach oben schieben
+await p.click("#liste .li:has-text('Gnocchi')"); await p.click("#bearb");
+await p.click("#gPlus"); await p.keyboard.type("Vorweg");
+const nZeilen = await p.locator("#zutEd .zr").count();
+await p.click("#zSort");
+ok(await p.isHidden("#zutEd .zm >> nth=0") && await p.isVisible("#zutEd .mv >> nth=0") && await p.isHidden("#gPlus") && (await p.textContent("#zSort")).includes("Fertig"), "Reihenfolge ändern: nur Namen mit ↑ ↓");
+for(let i = 0; i < nZeilen - 1; i++) await p.click("#zutEd .zr:last-child .mv[data-r='-1']".replace(":last-child", ":nth-child(" + (nZeilen - i) + ")"));
+await p.click("#zutEd .zr:nth-child(2) .mv[data-r='1']"); await p.click("#zutEd .zr:nth-child(3) .mv[data-r='-1']");
+if(BILD) await (await p.$("#zutEd")).screenshot({ path: BILD + "/sortieren.png" });
+ok((await p.inputValue("#zutEd .zr:first-child .zn")) === "Vorweg", "Überschrift ganz nach oben geschoben (↓ und ↑ heben sich auf)");
+await p.click("#zSort");
+ok(await p.isVisible("#zutEd .zm >> nth=0") && await p.isVisible("#gPlus"), "Fertig: Felder wieder da");
+await p.click("#eSpeichern"); await p.waitForSelector("#vRezept:not([hidden]) h2");
+const gz = JSON.parse(await p.evaluate(() => JSON.stringify(REZEPTE.find(r => r.titel === "Cremige Gnocchi").zutaten)));
+ok(gz[0].name === "Gnocchi" && gz[0].gruppe === "Vorweg" && gz.some(z => z.gruppe === "Sauce"), "gespeichert: Gnocchi unter „Vorweg“, Sauce-Gruppe bleibt" + " → " + JSON.stringify(gz.map(z => [z.name, z.gruppe])));
+await p.click("#bearb"); await p.click("#zutEd .zr.gr:first-child .x"); await p.click("#eSpeichern"); await p.waitForSelector("#vRezept:not([hidden]) h2");
+await p.click("#zur");
+
 // Still aktualisieren nach langer Zeit im Hintergrund
 await p.click("#liste .li:has-text('Gnocchi')"); await p.click("#pp");
 ok(await p.evaluate(() => neueFassung()) === false, "gleiche Fassung: kein Neuladen");

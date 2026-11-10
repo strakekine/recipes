@@ -278,6 +278,15 @@ Laden dort weiter. Test: gleiche Fassung → nichts, Bearbeiten → nichts, neue
 Personenzahl wieder offen. **Folge für Claude:** `FASSUNG` muss bei jeder Änderung hochgezählt werden — sonst lädt die App
 nie neu.
 
+## Zutaten umsortieren (10.11.2026, App Fassung „10.11.2026 a“, nur App)
+
+Vom Nutzer: eine vergessene Überschrift bei den Zutaten konnte nur ganz unten angehängt werden. Knopf **„↕ Reihenfolge
+ändern“** im Zutaten-Editor (`sortModus`): Menge, Einheit und ✕ verschwinden, Namen werden schreibgeschützt, jede Zeile
+(auch Überschriften) bekommt ↑ ↓ (`PFEILE`, `pfeileAn`, verschiebt im DOM, kein Neuaufbau); „✓ Fertig“ schaltet zurück.
+Eigener Modus, weil am iPhone neben Menge/Einheit/Name/✕ kein Platz für zwei Knöpfe ist; Ziehen mit dem Finger verworfen
+(kollidiert mit Scrollen). Die Gruppe ergibt sich beim Speichern aus der letzten Überschrift darüber (`editorLesen`).
+**Zubereitung bewusst nicht** (vom Nutzer: „brauchen wir nicht“) — dort setzt „+ Überschrift“ an die Schreibmarke.
+
 ## Memo vom Nutzer, für später (08.11.2026) — 1, 4, 5, 6 am 09.11. gebaut (siehe oben); 2 und 3 vom Nutzer erledigt („wenn es sie gibt, ist so ok“, 09.11.) — nur bauen, wenn er etwas vermisst
 
 1. **Rezeptkategorien** (z. B. Vorspeise, Hauptgericht, Dessert, Backen; Filter in der Liste). Die KI könnte beim Import
