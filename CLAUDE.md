@@ -189,7 +189,9 @@ beim Entfernen gelöscht). Rezept trägt `kategorien` (ids, bis 5); die KI schl�
 (unbekannte verworfen). App: **Startseite = Kacheln** („Alle Rezepte“, je Kategorie mit Anzahl, „Ohne Kategorie“ nur wenn
 nötig), Bild = eigenes Kachelbild, sonst Vorschaubild des zuletzt geänderten Rezepts, sonst Emoji. Tippen → Liste der
 Kategorie mit „‹ Kategorien“; Suche oben sucht immer über alle. Reiter „Rezepte“ nochmal tippen = zurück zu den Kacheln.
-„⚙️ Kategorien bearbeiten“ unter den Kacheln (Emoji, Name, 🖼️ Kachelbild, ↑ sortieren, ✕). Im Editor Kategorie-Knöpfe
+Kachel „Alle Rezepte“ seit App-Fassung „12.11.2026 a“: **Collage** der Vorschaubilder der vier zuletzt angelegten Rezepte
+(`collageBilder`, nach `erstellt`; ohne Bild übersprungen), leere Felder mit 🍝🥘🥗🥐 auf Farbe (vom Nutzer aus vier Entwürfen
+gewählt; vorher 📚). „⚙️ Kategorien bearbeiten“ unter den Kacheln (Emoji, Name, 🖼️ Kachelbild, ↑ sortieren, ✕). Im Editor Kategorie-Knöpfe
 (mehrere möglich), im Rezept als Schildchen. `[hidden]{display:none!important}` steht global, weil `display:flex` sonst das
 `hidden` einer Zeile überstimmte.
 

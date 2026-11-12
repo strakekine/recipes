@@ -3,7 +3,7 @@ import { readFileSync } from "node:fs";
 const html = readFileSync(new URL("../index.html", import.meta.url), "utf8");
 const a = html.indexOf("/* ==== Logik ===="), b = html.indexOf("/* ==== Oberfläche ====");
 if(a < 0 || b < 0) throw new Error("Marken Logik/Oberfläche nicht gefunden");
-const L = new Function(html.slice(a, b) + "; return { mengeLesen, mengeEingabe, zutatAusFeldern, istNachGeschmack, zeileLesen, mengeText, zeileAus, zutatenText, zutatenLesen, gangRaten, einkaufDazu, einkaufText, nachGang, istVorrat, vorratListe, sucheTrifft, zahlLesen, timerAus, uhrText, rezepteInKat, gekochtText, heuteGekocht, schrittListe, rezeptText, rezeptbuchHtml, sicherungFaellig };")();
+const L = new Function(html.slice(a, b) + "; return { mengeLesen, mengeEingabe, zutatAusFeldern, istNachGeschmack, zeileLesen, mengeText, zeileAus, zutatenText, zutatenLesen, gangRaten, einkaufDazu, einkaufText, nachGang, istVorrat, vorratListe, sucheTrifft, zahlLesen, timerAus, uhrText, rezepteInKat, gekochtText, heuteGekocht, schrittListe, rezeptText, rezeptbuchHtml, sicherungFaellig, collageBilder };")();
 
 let fehler = 0;
 const ok = (x, t) => { console.log((x ? "✓ " : "✗ ") + t); if(!x) fehler++; };
@@ -127,6 +127,10 @@ ok(buch.includes("Ohne Kategorie") && buch.includes("noch keine Rezepte") && buc
 const TAG = 864e5, R1 = [{ erstellt: T0 - 20 * TAG, geaendert: T0 - 2 * TAG }];
 ok(L.sicherungFaellig(R1, 0, 0, T0) && !L.sicherungFaellig(R1, T0 - TAG, 0, T0) && !L.sicherungFaellig(R1, T0 - 10 * TAG, 0, T0) && L.sicherungFaellig(R1, T0 - 15 * TAG, 0, T0), "Erinnerung: nie gesichert/älter als 14 Tage mit Änderung");
 ok(!L.sicherungFaellig(R1, 0, T0 + TAG, T0) && !L.sicherungFaellig([], 0, 0, T0) && !L.sicherungFaellig([{ erstellt: T0 - 3 * TAG }], 0, 0, T0), "„Später“, keine Rezepte, junge Sammlung: keine Erinnerung");
+
+
+// Collage „Alle Rezepte“
+ok(L.collageBilder([{ erstellt: 1, b: "a" }, { erstellt: 5, b: "" }, { erstellt: 3, b: "c" }, { erstellt: 4, b: "d" }, { erstellt: 9, b: "e" }, { erstellt: 2, b: "f" }, { erstellt: 0, b: "g" }], r => r.b).join() === "e,d,c,f", "Collage: neueste vier mit Bild, ohne Bild übersprungen");
 
 console.log(fehler ? `\n${fehler} Fehler` : "\nAlles grün");
 process.exit(fehler ? 1 : 0);

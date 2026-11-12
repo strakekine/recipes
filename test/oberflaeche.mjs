@@ -122,6 +122,7 @@ ok(bringHtml.includes("Klopapier") && bringHtml.includes("1 kg Gnocchi") && !bri
 // Neu laden: Liste aus dem Server, Einkauf aus dem Handy
 await p.goto(APP);
 await p.waitForSelector(".kachel.alle");
+ok(await p.locator(".kachel.alle .collage > div").count() === 4 && await p.locator(".kachel.alle .collage img").count() === 0 && (await p.textContent(".kachel.alle .collage")).includes("🍝"), "Kachel „Alle Rezepte“: Collage, ohne Fotos mit Emojis");
 ok((await p.textContent(".kachel.alle")).includes("1 Rezept") && await p.locator(".kachel").count() === 11 && (await p.textContent(".kachel.merk")).includes("Möchte ich kochen") && (await p.textContent(".kachel.ohne")).includes("Ohne Kategorie"), "Startseite: Kacheln „Alle Rezepte“, „Möchte ich kochen“, 8 Kategorien, „Ohne Kategorie“");
 await zuAllen();
 ok((await p.textContent("#liste")).includes("Cremige Gnocchi") && (await p.textContent("#liste")).includes("für 2 Kräcker"), "nach Neuladen: Rezept da, „für 2 Kräcker“");
@@ -226,6 +227,7 @@ ok(gn.originale.length === 1 && gn.vorschau === gn.originale[0].id && gn.kategor
 await p.click("#tR"); await p.click("#tR");
 ok(await p.locator(".kachel.ohne").count() === 0 && (await p.textContent(".kachel:has-text('Hauptgericht')")).includes("1 Rezept"), "Kachel zählt das Rezept, „Ohne Kategorie“ verschwindet");
 ok(await p.locator(".kachel:has-text('Hauptgericht') img").count() === 1, "Kachel zeigt das Bild des Rezepts");
+ok(await p.locator(".kachel.alle .collage img").count() === 1 && await p.locator(".kachel.alle .collage > div").count() === 4, "Collage: Rezeptfoto im ersten Feld, Rest Emojis");
 if(BILD) await p.screenshot({ path: BILD + "/kacheln.png", fullPage: true });
 await p.click(".kachel:has-text('Hauptgericht')");
 ok((await p.textContent("#liste")).includes("Cremige Gnocchi") && (await p.textContent("#liste h2")).includes("Hauptgericht"), "Kachel öffnet die Rezepte der Kategorie");
