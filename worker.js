@@ -28,6 +28,7 @@ export const EINHEITEN = ["g", "kg", "ml", "l", "EL", "TL", "Prise", "Msp", "St�
 export const AUFTRAG = `Du bekommst Material zu einem Kochrezept: ein Video (Ton UND Bild), Fotos, Screenshots, ein PDF oder Text. Mach daraus EIN Rezept auf Deutsch.
 
 Regeln:
+- SPRACHE: Alles auf Deutsch — Titel, Zutatennamen, Hinweise, Überschriften, Schritte, Notiz —, auch wenn das Material englisch, französisch oder anders ist. Übersetzen, nicht übernehmen. Nur Mengen und Zahlen bleiben genau, wie sie dastehen (bzw. umgerechnet, siehe unten).
 - Mengen NUR, wenn sie gesagt, eingeblendet oder geschrieben werden. Sonst menge = null und im hinweis, was gesagt wurde ("ein Schuss", "nach Gefühl") oder "Menge nicht genannt". Niemals Mengen erfinden oder schätzen.
 - Keine Zutat erfinden. Was im Video benutzt, aber nicht genannt wird, darf rein, mit menge null und hinweis "im Video zu sehen".
 - Gesprochenes zählt genauso wie Geschriebenes. Widersprechen sich Video und Beschreibung, nimm das Video und schreib den Widerspruch in die notiz.
@@ -51,7 +52,7 @@ Regeln:
 const SCHEMA = {
   type: "OBJECT",
   properties: {
-    titel: { type: "STRING" },
+    titel: { type: "STRING", description: "auf Deutsch" },
     portionen: { type: "NUMBER", nullable: true },
     portion_einheit: { type: "STRING", description: "wofür die Zahl portionen steht: Personen, Kräcker, Stück, Kuchen …" },
     zeit_min: { type: "NUMBER", nullable: true },
@@ -418,8 +419,9 @@ async function rezeptMachen(env, request, ctx){
   parts.push({ text: AUFTRAG
     + (katListe.length ? "\n\nKategorien zur Auswahl (id = Name): " + katListe.map(k => k.id + " = " + k.name).join(", ") : "")
     + (text ? "\n\nText vom Nutzer (Beschreibung, Link oder Rezept):\n" + text : "")
-    + (seite ? "\n\n" + (seite.art === "ld" ? "Rezeptdaten der verlinkten Webseite (genau übernehmen):\n" : "Text der verlinkten Webseite:\n") + seite.text
-      : seiteFehler ? "\n\n(Die verlinkte Seite ließ sich nicht lesen. Nichts von dort erfinden.)" : "") });
+    + (seite ? "\n\n" + (seite.art === "ld" ? "Rezeptdaten der verlinkten Webseite (Mengen und Schritte genau übernehmen, aber auf Deutsch übersetzen):\n" : "Text der verlinkten Webseite:\n") + seite.text
+      : seiteFehler ? "\n\n(Die verlinkte Seite ließ sich nicht lesen. Nichts von dort erfinden.)" : "")
+    + "\n\nNicht vergessen: Das Rezept wird komplett auf Deutsch geschrieben." });
   const extra = { katIds: katListe.map(k => k.id), bild: seite?.bild || "" };
 
   const modell = str(env.MODELL, 80) || "gemini-flash-latest";
@@ -842,7 +844,7 @@ label.file{display:block;border:2px dashed var(--l);border-radius:12px;padding:1
 <div class="k" id="ergebnis" hidden></div>
 <div class="k"><b>Gespeichert</b><div id="liste" class="s">–</div></div>
 <details class="k" id="protK"><summary><b>Protokoll</b> <span class="s">(was der Worker zuletzt gemacht hat)</span></summary><div id="prot" class="s">–</div></details>
-<div class="s" style="text-align:center">Fassung 09.11.2026 d</div>
+<div class="s" style="text-align:center">Fassung 12.11.2026 a</div>
 </main><script>
 const $=id=>document.getElementById(id);
 let CODE="";try{CODE=localStorage.getItem("recipes_code")||""}catch{}

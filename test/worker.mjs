@@ -291,6 +291,7 @@ ok((await call("/api/rezept", { ...auftrag, body: JSON.stringify({ text: "https:
 WEB["https://pdf.example/a.pdf"] = () => new Response("%PDF", { headers: { "content-type": "application/pdf" } });
 ok((await call("/api/rezept", { ...auftrag, body: JSON.stringify({ text: "https://pdf.example/a.pdf" }) })).d?.fehler?.includes("keine Webseite"), "PDF-Link: keine Webseite");
 ok(W.AUFTRAG.includes("NICHT aus eigenem Wissen nachbauen"), "Auftrag verbietet Nachbauen aus dem Namen");
+ok(W.AUFTRAG.includes("SPRACHE: Alles auf Deutsch") && lkText.includes("auf Deutsch übersetzen") && !lkText.includes("(genau übernehmen)") && lkText.trim().endsWith("komplett auf Deutsch geschrieben."), "Deutsch: eigene Regel, Rezeptdaten zum Übersetzen, Erinnerung am Ende (Befund 12.11.: englisches Rezept blieb englisch)");
 ok(W.AUFTRAG.includes('"Für den Teig:"') && W.AUFTRAG.includes("Doppelpunkt am Ende"), "Auftrag: Abschnitte als Zeile mit Doppelpunkt (App zeigt sie als Überschrift)");
 
 // Kategorien

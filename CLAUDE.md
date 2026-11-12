@@ -287,6 +287,14 @@ Eigener Modus, weil am iPhone neben Menge/Einheit/Name/✕ kein Platz für zwei 
 (kollidiert mit Scrollen). Die Gruppe ergibt sich beim Speichern aus der letzten Überschrift darüber (`editorLesen`).
 **Zubereitung bewusst nicht** (vom Nutzer: „brauchen wir nicht“) — dort setzt „+ Überschrift“ an die Schreibmarke.
 
+## Immer auf Deutsch (12.11.2026, Worker Fassung „12.11.2026 a“ — **Worker neu einfügen nötig**)
+
+Befund vom Nutzer: ein englisches Rezept (Osso Buco) kam nicht auf Deutsch an. Wahrscheinliche Ursache: über den
+Rezeptdaten einer Webseite stand „(genau übernehmen)“, und „auf Deutsch“ stand nur einmal am Anfang vor viel fremdsprachigem
+Material. Jetzt: eigene Regel „SPRACHE: Alles auf Deutsch … Übersetzen, nicht übernehmen“ als erste Regel, Rezeptdaten
+„Mengen und Schritte genau übernehmen, aber auf Deutsch übersetzen“, Erinnerung als letzter Satz des Auftrags, Schema
+`titel` mit description „auf Deutsch“. Ob es Link, Text oder Bild war, ist offen; am echten Gemini nicht geprüft.
+
 ## Memo vom Nutzer, für später (08.11.2026) — 1, 4, 5, 6 am 09.11. gebaut (siehe oben); 2 und 3 vom Nutzer erledigt („wenn es sie gibt, ist so ok“, 09.11.) — nur bauen, wenn er etwas vermisst
 
 1. **Rezeptkategorien** (z. B. Vorspeise, Hauptgericht, Dessert, Backen; Filter in der Liste). Die KI könnte beim Import
