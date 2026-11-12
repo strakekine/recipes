@@ -32,17 +32,19 @@ Regeln:
 - Mengen NUR, wenn sie gesagt, eingeblendet oder geschrieben werden. Sonst menge = null und im hinweis, was gesagt wurde ("ein Schuss", "nach Gefühl") oder "Menge nicht genannt". Niemals Mengen erfinden oder schätzen.
 - Keine Zutat erfinden. Was im Video benutzt, aber nicht genannt wird, darf rein, mit menge null und hinweis "im Video zu sehen".
 - Gesprochenes zählt genauso wie Geschriebenes. Widersprechen sich Video und Beschreibung, nimm das Video und schreib den Widerspruch in die notiz.
-- Amerikanische Maße (cup, oz, lb, tbsp, tsp, °F) in g, ml, EL, TL, °C umrechnen; das Original kommt in den hinweis.
+- Amerikanische Maße (cup, oz, lb, tbsp, tsp, °F) in g, ml, EL, TL, °C umrechnen; das Original kommt in den hinweis. Steht die metrische Angabe schon daneben ("1 cup / 120 g"), nimm sie und lass den hinweis weg.
+- Stehen Stückzahl und Gewicht da ("4 Kalbshaxen, ca. 1,5 kg"), nimm das Gewicht als Menge und die Stückzahl in den hinweis ("4 Scheiben").
+- Schale oder Saft einer Frucht: die Frucht ist die Zutat ("Zest of 1 lemon" → menge 1, einheit leer, name "Zitrone", hinweis "abgeriebene Schale").
 - menge ist eine Zahl (0.5 statt "1/2"). Bei Spannen ("2 bis 3") menge = 2, menge_bis = 3.
 - einheit ist genau eines dieser Kürzel, so geschrieben: ${EINHEITEN.filter(Boolean).join(", ")} — also "g" statt "Gramm", "EL" statt "Esslöffel". Leer nur, wenn es Stück ohne Wort ist ("2 Eier": menge 2, einheit leer). Die Einheit gehört NIE in den Namen ("60 g geriebener Parmesan": menge 60, einheit "g", name "geriebener Parmesan").
 - name ist die Zutat ohne Menge, im Singular wo üblich ("Ei" bei einem, "Eier" bei mehreren ist auch in Ordnung).
 - gang ist genau eine von: ${GAENGE.join(", ")}.
-- gruppe nur, wenn das Rezept Zutaten aufteilt ("Für die Sauce"), sonst leer.
+- gruppe: Teilt das Rezept die Zutaten auf ("For the Gremolata:", "Für die Sauce", "Pour la pâte"), bekommt JEDE Zutat dieses Abschnitts diese gruppe, übersetzt ("Für die Gremolata"). Die erste Gruppe nicht vergessen ("For the Ossobuco:" → "Für das Ossobuco"). Ohne Aufteilung leer.
 - portionen: die Menge, für die das Rezept gedacht ist, wie genannt ("für 4 Personen" → 4, "für 24 bis 28 Kräcker" → 26, "1 Kuchen" → 1). Wenn nicht genannt, schätzen und in die notiz schreiben "Portionen geschätzt".
 - portion_einheit: wofür diese Zahl steht. "Personen", wenn es um Personen oder Portionen geht; sonst das Wort aus dem Rezept in der Mehrzahl ("Kräcker", "Stück", "Brötchen", "Kekse", "Gläser") oder Einzahl, wenn es nur eins ist ("Kuchen", "Brot", "Blech"). Nie Personen erfinden, wo das Rezept Stück nennt.
 - zeit_min: Gesamtzeit in Minuten, wenn erkennbar, sonst null.
 - bild_sekunde: nur bei einem Video — die Sekunde (vom Anfang des Videos gezählt), in der das fertige Gericht am schönsten und am größten zu sehen ist, möglichst ohne eingeblendeten Text. Das wird das Vorschaubild. Ohne Video oder ohne fertiges Gericht: null.
-- schritte: kurz und klar, ein Arbeitsgang je Schritt, Zeiten und Temperaturen wörtlich übernehmen ("10 Minuten köcheln").
+- schritte: VOLLSTÄNDIG übersetzen, nicht zusammenfassen. Jede Angabe bleibt drin: Würzen (Salz, Pfeffer, Muskat …), Zeiten, Temperaturen, Hitze, Mengen, Handgriffe ("Fett abgießen", "Bratensatz lösen") und Tipps ("nicht zu viel auf einmal in die Pfanne"). Lange Absätze in mehrere Schritte teilen, ein Arbeitsgang je Schritt — aber nichts weglassen.
 - Teilt das Rezept die Zubereitung in Abschnitte (z. B. Teig, Füllung, Sauce, Glasur), dann kommt vor die Schritte jedes Abschnitts eine eigene Zeile in schritte: nur der kurze Name mit Doppelpunkt am Ende ("Für den Teig:", "Sauce:"), ohne Nummer, ohne weiteren Text. Die App zeigt solche Zeilen als Überschrift. Keine Abschnitte erfinden, wenn das Rezept einfach durchläuft; normale Schritte enden nie mit Doppelpunkt.
 - Kommt der Inhalt einer Webseite mit (strukturierte Rezeptdaten oder Seitentext), übernimm Zutaten, Mengen und Schritte genau von dort.
 - Steht nur ein Link oder ein Rezeptname da, ohne den Inhalt, dann das Rezept NICHT aus eigenem Wissen nachbauen: titel leer und in der notiz sagen, dass der Inhalt fehlt.
@@ -228,7 +230,9 @@ export async function seiteLesen(url){
   if(typ && !/html|xml|text\/plain/i.test(typ)) throw new Error("das ist keine Webseite (" + typ.split(";")[0] + ")");
   const html = (await r.text()).slice(0, SEITE_MAX);
   const ld = rezeptAusLd(html);
-  if(ld) return { art: "ld", text: ldAlsText(ld), bild: ldBild(ld) || metaBild(html) };
+  /* Die Rezeptdaten sind oft eine Kurzfassung: ohne Zutatengruppen, Schritte gekürzt (Befund 12.11., Osso Buco:
+     Gremolata-Gruppe und Details fehlten). Darum geht der sichtbare Seitentext mit. */
+  if(ld) return { art: "ld", text: ldAlsText(ld), seitentext: seitenText(html).slice(0, 30000), bild: ldBild(ld) || metaBild(html) };
   const text = seitenText(html);
   if(text.length < 200) throw new Error("auf der Seite steht kaum Text (vielleicht nur mit Anmeldung lesbar)");
   return { art: "text", text, bild: metaBild(html) };
@@ -419,7 +423,10 @@ async function rezeptMachen(env, request, ctx){
   parts.push({ text: AUFTRAG
     + (katListe.length ? "\n\nKategorien zur Auswahl (id = Name): " + katListe.map(k => k.id + " = " + k.name).join(", ") : "")
     + (text ? "\n\nText vom Nutzer (Beschreibung, Link oder Rezept):\n" + text : "")
-    + (seite ? "\n\n" + (seite.art === "ld" ? "Rezeptdaten der verlinkten Webseite (Mengen und Schritte genau übernehmen, aber auf Deutsch übersetzen):\n" : "Text der verlinkten Webseite:\n") + seite.text
+    + (seite ? "\n\n" + (seite.art === "ld"
+      ? "Rezeptdaten der verlinkten Webseite (Kurzfassung für Suchmaschinen — daraus die genauen Mengen nehmen):\n" + seite.text
+        + (seite.seitentext ? "\n\nSichtbarer Text derselben Webseite (daraus die Zutatengruppen und die vollständigen Schritte mit allen Einzelheiten nehmen; Werbung und Erzählungen ignorieren):\n" + seite.seitentext : "")
+      : "Text der verlinkten Webseite:\n" + seite.text)
       : seiteFehler ? "\n\n(Die verlinkte Seite ließ sich nicht lesen. Nichts von dort erfinden.)" : "")
     + "\n\nNicht vergessen: Das Rezept wird komplett auf Deutsch geschrieben." });
   const extra = { katIds: katListe.map(k => k.id), bild: seite?.bild || "" };
@@ -844,7 +851,7 @@ label.file{display:block;border:2px dashed var(--l);border-radius:12px;padding:1
 <div class="k" id="ergebnis" hidden></div>
 <div class="k"><b>Gespeichert</b><div id="liste" class="s">–</div></div>
 <details class="k" id="protK"><summary><b>Protokoll</b> <span class="s">(was der Worker zuletzt gemacht hat)</span></summary><div id="prot" class="s">–</div></details>
-<div class="s" style="text-align:center">Fassung 12.11.2026 a</div>
+<div class="s" style="text-align:center">Fassung 12.11.2026 b</div>
 </main><script>
 const $=id=>document.getElementById(id);
 let CODE="";try{CODE=localStorage.getItem("recipes_code")||""}catch{}

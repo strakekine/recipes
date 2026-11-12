@@ -294,6 +294,14 @@ Rezeptdaten einer Webseite stand „(genau übernehmen)“, und „auf Deutsch�
 Material. Jetzt: eigene Regel „SPRACHE: Alles auf Deutsch … Übersetzen, nicht übernehmen“ als erste Regel, Rezeptdaten
 „Mengen und Schritte genau übernehmen, aber auf Deutsch übersetzen“, Erinnerung als letzter Satz des Auftrags, Schema
 `titel` mit description „auf Deutsch“. Ob es Link, Text oder Bild war, ist offen; am echten Gemini nicht geprüft.
+**Danach (12.11., Worker „12.11.2026 b“):** auf Deutsch kam es, aber Osso Buco (Link, Jamie-Oliver-Nachkochseite) mit
+**gekürzten Schritten** (Würzen, Bratzeit, Fett abgießen, Einkochen fehlten), **ohne Gruppe „Gremolata“** (Nutzer musste sie
+selbst einfügen), „1 Handvoll Zitronen zest“ und doppelte Angaben wie „(ca. 3.3 lbs / 1.5 kg)“. Ursachen: Auftrag sagte
+„Schritte kurz und klar“ → zusammengefasst; bei Links bekam Gemini nur die Rezeptdaten (JSON-LD), die oft eine Kurzfassung
+ohne Zutatengruppen sind. Jetzt: bei JSON-LD geht zusätzlich der sichtbare Seitentext mit (`seite.seitentext`, 30 000
+Zeichen; Mengen aus den Daten, Gruppen und vollständige Schritte aus dem Text); Auftrag: Schritte VOLLSTÄNDIG übersetzen,
+nichts weglassen; jede Zutat eines Abschnitts bekommt die gruppe (auch die erste); metrische Angabe vorhanden → kein
+hinweis; Stück + Gewicht → Gewicht, Stück in den hinweis; Schale/Saft → Frucht als Zutat. Am echten Gemini nicht geprüft.
 
 ## Memo vom Nutzer, für später (08.11.2026) — 1, 4, 5, 6 am 09.11. gebaut (siehe oben); 2 und 3 vom Nutzer erledigt („wenn es sie gibt, ist so ok“, 09.11.) — nur bauen, wenn er etwas vermisst
 

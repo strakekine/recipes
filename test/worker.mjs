@@ -270,6 +270,8 @@ G.aufrufe = []; G.modelle = [];
 const lk = await call("/api/rezept", { ...auftrag, body: JSON.stringify({ text: "https://yummix.example/gateau-royal/" }) });
 const lkText = JSON.parse(G.aufrufe.find(a => a.url.includes(":streamGenerateContent")).opt.body).contents[0].parts.at(-1).text;
 ok(lk.d?.rezept?.titel === "Gâteau royal" && lkText.includes("Rezeptdaten der verlinkten Webseite") && lkText.includes("- 200 g de farine"), "Link: Seite gelesen, Rezeptdaten gehen an Gemini");
+ok(lkText.includes("Sichtbarer Text derselben Webseite") && lkText.indexOf("Rezeptdaten der verlinkten Webseite") < lkText.indexOf("Sichtbarer Text"), "Link mit Rezeptdaten: sichtbarer Seitentext geht mit (Gruppen, vollständige Schritte; Befund 12.11. Osso Buco)");
+ok(W.AUFTRAG.includes("VOLLSTÄNDIG übersetzen, nicht zusammenfassen") && W.AUFTRAG.includes("JEDE Zutat dieses Abschnitts") && W.AUFTRAG.includes("Zest of 1 lemon"), "Auftrag: Schritte vollständig, Gruppen für jede Zutat, Zitronenschale");
 ok(lkText.includes("backen = Backen") && lk.d.rezept.kategorien.join() === "backen,dessert", "Kategorien zur Auswahl, unbekannte verworfen, höchstens 2");
 ok(lk.d.rezept.bild_url === "https://yummix.example/gateau.jpg" && lk.d.rezept.quelle === "https://yummix.example/gateau-royal/", "Bild der Seite und Link als Quelle");
 WEB["https://blog.example/rezept"] = () => new Response("<html><body><nav>Menü</nav><h1>Omas Kuchen</h1><p>" + "Zutaten: 250 g Butter, 4 Eier. ".repeat(10) + "</p><script>var x=1</script></body></html>", { headers: { "content-type": "text/html" } });
@@ -291,7 +293,7 @@ ok((await call("/api/rezept", { ...auftrag, body: JSON.stringify({ text: "https:
 WEB["https://pdf.example/a.pdf"] = () => new Response("%PDF", { headers: { "content-type": "application/pdf" } });
 ok((await call("/api/rezept", { ...auftrag, body: JSON.stringify({ text: "https://pdf.example/a.pdf" }) })).d?.fehler?.includes("keine Webseite"), "PDF-Link: keine Webseite");
 ok(W.AUFTRAG.includes("NICHT aus eigenem Wissen nachbauen"), "Auftrag verbietet Nachbauen aus dem Namen");
-ok(W.AUFTRAG.includes("SPRACHE: Alles auf Deutsch") && lkText.includes("auf Deutsch übersetzen") && !lkText.includes("(genau übernehmen)") && lkText.trim().endsWith("komplett auf Deutsch geschrieben."), "Deutsch: eigene Regel, Rezeptdaten zum Übersetzen, Erinnerung am Ende (Befund 12.11.: englisches Rezept blieb englisch)");
+ok(W.AUFTRAG.includes("SPRACHE: Alles auf Deutsch") && !lkText.includes("(genau übernehmen)") && lkText.trim().endsWith("komplett auf Deutsch geschrieben."), "Deutsch: eigene Regel, Rezeptdaten zum Übersetzen, Erinnerung am Ende (Befund 12.11.: englisches Rezept blieb englisch)");
 ok(W.AUFTRAG.includes('"Für den Teig:"') && W.AUFTRAG.includes("Doppelpunkt am Ende"), "Auftrag: Abschnitte als Zeile mit Doppelpunkt (App zeigt sie als Überschrift)");
 
 // Kategorien
