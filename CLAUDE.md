@@ -302,7 +302,10 @@ ohne Zutatengruppen sind. Jetzt: bei JSON-LD geht zusätzlich der sichtbare Seit
 Zeichen; Mengen aus den Daten, Gruppen und vollständige Schritte aus dem Text); Auftrag: Schritte VOLLSTÄNDIG übersetzen,
 nichts weglassen; jede Zutat eines Abschnitts bekommt die gruppe (auch die erste); metrische Angabe vorhanden → kein
 hinweis; Stück + Gewicht → Gewicht, Stück in den hinweis; Schale/Saft → Frucht als Zutat. **Fassung c:** die drei Gremolata-Zutaten fehlten ganz (Nutzer trug sie selbst ein) →
-Regel „ALLE Zutaten aus ALLEN Abschnitten … fehlt in den Rezeptdaten etwas, gilt der Seitentext“. Am echten Gemini nicht geprüft.
+Regel „ALLE Zutaten aus ALLEN Abschnitten … fehlt in den Rezeptdaten etwas, gilt der Seitentext“. **Mit c am echten Gemini:**
+Schritte jetzt vollständig (21 statt 8), aber Abschnitts-Überschriften blieben englisch und die Anrede wechselte
+(„Heizen Sie …“ / „Hacke …“). **Fassung d:** Überschriften ausdrücklich übersetzen (mit Beispiel), Schritte im Infinitiv
+ohne Anrede wie im Kochbuch („Den Backofen auf 180 °C vorheizen.“) — Claudes Wahl, dem Nutzer gesagt.
 
 ## Memo vom Nutzer, für später (08.11.2026) — 1, 4, 5, 6 am 09.11. gebaut (siehe oben); 2 und 3 vom Nutzer erledigt („wenn es sie gibt, ist so ok“, 09.11.) — nur bauen, wenn er etwas vermisst
 

@@ -45,8 +45,8 @@ Regeln:
 - portion_einheit: wofür diese Zahl steht. "Personen", wenn es um Personen oder Portionen geht; sonst das Wort aus dem Rezept in der Mehrzahl ("Kräcker", "Stück", "Brötchen", "Kekse", "Gläser") oder Einzahl, wenn es nur eins ist ("Kuchen", "Brot", "Blech"). Nie Personen erfinden, wo das Rezept Stück nennt.
 - zeit_min: Gesamtzeit in Minuten, wenn erkennbar, sonst null.
 - bild_sekunde: nur bei einem Video — die Sekunde (vom Anfang des Videos gezählt), in der das fertige Gericht am schönsten und am größten zu sehen ist, möglichst ohne eingeblendeten Text. Das wird das Vorschaubild. Ohne Video oder ohne fertiges Gericht: null.
-- schritte: VOLLSTÄNDIG übersetzen, nicht zusammenfassen. Jede Angabe bleibt drin: Würzen (Salz, Pfeffer, Muskat …), Zeiten, Temperaturen, Hitze, Mengen, Handgriffe ("Fett abgießen", "Bratensatz lösen") und Tipps ("nicht zu viel auf einmal in die Pfanne"). Lange Absätze in mehrere Schritte teilen, ein Arbeitsgang je Schritt — aber nichts weglassen.
-- Teilt das Rezept die Zubereitung in Abschnitte (z. B. Teig, Füllung, Sauce, Glasur), dann kommt vor die Schritte jedes Abschnitts eine eigene Zeile in schritte: nur der kurze Name mit Doppelpunkt am Ende ("Für den Teig:", "Sauce:"), ohne Nummer, ohne weiteren Text. Die App zeigt solche Zeilen als Überschrift. Keine Abschnitte erfinden, wenn das Rezept einfach durchläuft; normale Schritte enden nie mit Doppelpunkt.
+- schritte: VOLLSTÄNDIG übersetzen, nicht zusammenfassen. Jede Angabe bleibt drin: Würzen (Salz, Pfeffer, Muskat …), Zeiten, Temperaturen, Hitze, Mengen, Handgriffe ("Fett abgießen", "Bratensatz lösen") und Tipps ("nicht zu viel auf einmal in die Pfanne"). Lange Absätze in mehrere Schritte teilen, ein Arbeitsgang je Schritt — aber nichts weglassen. Schreibweise wie in deutschen Kochbüchern, im Infinitiv ohne Anrede ("Den Backofen auf 180 °C vorheizen.", "Zwiebeln fein hacken."), nie "Sie" oder "du", in allen Schritten gleich.
+- Teilt das Rezept die Zubereitung in Abschnitte (z. B. Teig, Füllung, Sauce, Glasur), dann kommt vor die Schritte jedes Abschnitts eine eigene Zeile in schritte: nur der kurze Name mit Doppelpunkt am Ende ("Für den Teig:", "Sauce:"), ohne Nummer, ohne weiteren Text. Auch diese Überschriften auf Deutsch ("Prep the Ossobuco" → "Ossobuco vorbereiten:", "Make the Gremolata" → "Gremolata zubereiten:"). Die App zeigt solche Zeilen als Überschrift. Keine Abschnitte erfinden, wenn das Rezept einfach durchläuft; normale Schritte enden nie mit Doppelpunkt.
 - Kommt der Inhalt einer Webseite mit (strukturierte Rezeptdaten oder Seitentext), übernimm Zutaten, Mengen und Schritte genau von dort.
 - Steht nur ein Link oder ein Rezeptname da, ohne den Inhalt, dann das Rezept NICHT aus eigenem Wissen nachbauen: titel leer und in der notiz sagen, dass der Inhalt fehlt.
 - kategorien: nur, wenn unten Kategorien zur Auswahl stehen — 1 oder 2 passende ids von dort, sonst leer.
@@ -852,7 +852,7 @@ label.file{display:block;border:2px dashed var(--l);border-radius:12px;padding:1
 <div class="k" id="ergebnis" hidden></div>
 <div class="k"><b>Gespeichert</b><div id="liste" class="s">–</div></div>
 <details class="k" id="protK"><summary><b>Protokoll</b> <span class="s">(was der Worker zuletzt gemacht hat)</span></summary><div id="prot" class="s">–</div></details>
-<div class="s" style="text-align:center">Fassung 12.11.2026 c</div>
+<div class="s" style="text-align:center">Fassung 12.11.2026 d</div>
 </main><script>
 const $=id=>document.getElementById(id);
 let CODE="";try{CODE=localStorage.getItem("recipes_code")||""}catch{}
