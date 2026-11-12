@@ -301,7 +301,8 @@ selbst einfügen), „1 Handvoll Zitronen zest“ und doppelte Angaben wie „(c
 ohne Zutatengruppen sind. Jetzt: bei JSON-LD geht zusätzlich der sichtbare Seitentext mit (`seite.seitentext`, 30 000
 Zeichen; Mengen aus den Daten, Gruppen und vollständige Schritte aus dem Text); Auftrag: Schritte VOLLSTÄNDIG übersetzen,
 nichts weglassen; jede Zutat eines Abschnitts bekommt die gruppe (auch die erste); metrische Angabe vorhanden → kein
-hinweis; Stück + Gewicht → Gewicht, Stück in den hinweis; Schale/Saft → Frucht als Zutat. Am echten Gemini nicht geprüft.
+hinweis; Stück + Gewicht → Gewicht, Stück in den hinweis; Schale/Saft → Frucht als Zutat. **Fassung c:** die drei Gremolata-Zutaten fehlten ganz (Nutzer trug sie selbst ein) →
+Regel „ALLE Zutaten aus ALLEN Abschnitten … fehlt in den Rezeptdaten etwas, gilt der Seitentext“. Am echten Gemini nicht geprüft.
 
 ## Memo vom Nutzer, für später (08.11.2026) — 1, 4, 5, 6 am 09.11. gebaut (siehe oben); 2 und 3 vom Nutzer erledigt („wenn es sie gibt, ist so ok“, 09.11.) — nur bauen, wenn er etwas vermisst
 

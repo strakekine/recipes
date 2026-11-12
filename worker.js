@@ -30,6 +30,7 @@ export const AUFTRAG = `Du bekommst Material zu einem Kochrezept: ein Video (Ton
 Regeln:
 - SPRACHE: Alles auf Deutsch — Titel, Zutatennamen, Hinweise, Überschriften, Schritte, Notiz —, auch wenn das Material englisch, französisch oder anders ist. Übersetzen, nicht übernehmen. Nur Mengen und Zahlen bleiben genau, wie sie dastehen (bzw. umgerechnet, siehe unten).
 - Mengen NUR, wenn sie gesagt, eingeblendet oder geschrieben werden. Sonst menge = null und im hinweis, was gesagt wurde ("ein Schuss", "nach Gefühl") oder "Menge nicht genannt". Niemals Mengen erfinden oder schätzen.
+- ALLE Zutaten aus ALLEN Abschnitten übernehmen (auch Sauce, Gremolata, Glasur, Deko …), keine auslassen. Fehlt in den Rezeptdaten etwas, das im Seitentext steht, gilt der Seitentext.
 - Keine Zutat erfinden. Was im Video benutzt, aber nicht genannt wird, darf rein, mit menge null und hinweis "im Video zu sehen".
 - Gesprochenes zählt genauso wie Geschriebenes. Widersprechen sich Video und Beschreibung, nimm das Video und schreib den Widerspruch in die notiz.
 - Amerikanische Maße (cup, oz, lb, tbsp, tsp, °F) in g, ml, EL, TL, °C umrechnen; das Original kommt in den hinweis. Steht die metrische Angabe schon daneben ("1 cup / 120 g"), nimm sie und lass den hinweis weg.
@@ -851,7 +852,7 @@ label.file{display:block;border:2px dashed var(--l);border-radius:12px;padding:1
 <div class="k" id="ergebnis" hidden></div>
 <div class="k"><b>Gespeichert</b><div id="liste" class="s">–</div></div>
 <details class="k" id="protK"><summary><b>Protokoll</b> <span class="s">(was der Worker zuletzt gemacht hat)</span></summary><div id="prot" class="s">–</div></details>
-<div class="s" style="text-align:center">Fassung 12.11.2026 b</div>
+<div class="s" style="text-align:center">Fassung 12.11.2026 c</div>
 </main><script>
 const $=id=>document.getElementById(id);
 let CODE="";try{CODE=localStorage.getItem("recipes_code")||""}catch{}
